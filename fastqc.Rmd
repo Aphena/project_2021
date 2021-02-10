@@ -1,0 +1,12 @@
+# fastqc
+
+````{R}
+library(utils)
+````
+
+````{R}
+setwd("/Users/Huangshiyue/Desktop/raw_data/report")
+EW9_path <- "Users/Huangshiyue/Desktop/raw_data/report/EW9_fastqc.zip"
+EW9 <- unzip(EW9_path, exdir = "Users/Huangshiyue/Desktop/raw_data/unzip_report")
+EW9 <- read.table("EW9", sep = ",", header = T)
+````
