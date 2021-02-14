@@ -1,0 +1,86 @@
+# fastqc
+
+````{R}
+library(utils)
+````
+
+# run fastqc in all fastq files 
+````{R}
+setwd("/Users/Huangshiyue/Desktop/QC/FastQC")
+system("cd /Users/Huangshiyue/Desktop/QC/FastQC") 
+system("chmod 755 fastqc")
+system("./fastqc ~/Desktop/raw_data/data/*.fastq.gz -o ~/Desktop/raw_data/report")
+````
+
+# unzip one fastqc file, read and extract txt.file
+````{R}
+setwd("/Users/Huangshiyue/Desktop/raw_data/report")
+EW9_list <- unzip("EW9_fastqc.zip", list = T)
+EW9_list
+EW9 <- unzip("EW9_fastqc.zip", files = "EW9_fastqc/fastqc_data.txt", exdir = "unzip_report")
+EW9_mydata <- read.delim(EW9)
+class(EW9_mydata)
+````
+
+# using loop to unzip all files 
+````{R}
+library(plyr)
+
+# get all the zip files
+EWzip <- list.files(path = "/Users/Huangshiyue/Desktop/raw_data/report", pattern = "*.zip", full.names = TRUE)
+
+# unzip all your files
+ldply(.data = EWzip, .fun = unzip, unzip("*.zip", files = "*/fastqc_data.txt"), exdir = "/Users/Huangshiyue/Desktop/raw_data/report")
+````
+
+# Creating a data frame with the contents of multiple txt files
+````{R}
+combined_EW <- do.call("rbind", lapply("EW"+"*"+"_mydata", as.data.frame))
+````
+
+# Running FastQC from R
+````{R}
+setwd("Users/Huangshiyue/Desktop/raw_data")
+fastqc(fq.dir = "data", 
+       qc.dir = "test", 
+       threads = 4                  
+       ) # No such file or directory error in running command
+````
+
+````{R}
+library(fastqcr)
+library(dplyr)
+
+qc_EW <- qc_aggregate(qc.dir = "/Users/Huangshiyue/Desktop/raw_data/report")
+
+summary(qc_EW) 
+qc_stats(qc_EW)
+
+select(.data = qc_EW, sample, module, status)
+filter(.data = qc_EW, status %in% c("WARN", "FAIL"))
+arrange(qc_stats(qc_EW), tot.seq) #cannot order properly
+
+qc_stats(qc_EW)
+
+qc_fails(qc_EW)
+qc_warns(qc_EW)
+qc_problems(qc_EW)
+
+qc_read(qc_EW)
+qc_report(qc_EW)
+
+qc_plot(qc_EW, "Per sequence GC content")
+````
+
+# run multiqc in all fastqc files
+````{R}
+system("conda update python")
+system("python --version")
+system("conda activate python3.8")
+system("conda create -n python3.8 python=3.8")
+system("conda install -c bioconda multiqc")
+system("cd Desktop/raw_data/report")
+system("multiqc *.zip")
+````
+
+
