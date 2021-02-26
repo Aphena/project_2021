@@ -1,0 +1,54 @@
+CHANGLOG
+
+## 2021-02-26
+* Organised the project repository based on Wilson G, et.al., 2017 and put itto git
+* Started to write the lab manuscript
+* Transferred my lab diary to CHANGLOG.text
+* Changed all .docx files to machine  readable file, .md for documentation and .csv for tabular data
+
+## 2021-02-24
+* Added the codes used for Cutadapt to the runall.rmd
+
+## 2021-02-22
+* Applied Cutadapt in all my fastq files
+* Generated multiqc reports for verifying the trimming of adaptors
+* Reviewed my heat shock gene list with Weronika
+* Confirmed the reference genome choosing in genome alignment and assembly
+
+## 2021-02-19
+* Analyzed the FASTQC and MultiQC data
+* Made a heat_shock_gene_list.docx based on paper and several databases
+* Installed Cutadapt and IGV prepared for trimmed adapters
+
+## 2021-02-15
+* Created a runall.rmd file in which I wrote the codes used for running FastQC and MultiQC
+* Made some notes on results get from MultiQC and FastQC reports to fastqc_multiqc_analysis.doxc file
+
+## 2021-02-10
+* Made fastqc run on all files from terminal
+* Made multiqc run on all files from terminal
+
+## 2021-02-08
+* Installed Java and Anaconda3
+* Run fastqc on terminal and R
+
+## 2021-02-03
+* Reviewed the experiment_design_trial.docx with Weronika
+* Installed R and RStudio
+
+## 2021-01-27
+* Made a draft of experiment_design_trial.docx
+* Considered temperature choosing and control using in my heat shock experiment in different strains
+
+## 2021-01-14
+* Created my git repository in Github
+* Practiced some git commands
+
+
+
+
+
+
+
+
+
