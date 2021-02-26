@@ -1,0 +1,97 @@
+---
+title: "project"
+author: "Aphena"
+date: "25/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Runing all bash codes in conda environment 
+1. Install Anaconda (command line version)
+https://docs.anaconda.com/anaconda/install/mac-os/ 
+2. Create new conda environment
+conda create -n python3.8 python=3.8
+3. Activate new environment
+conda activate python3.8
+4. Install fastqc
+conda install -c bioconda fastqc
+5. Install multiqc
+conda install -c bioconda multiqc
+6. Install cutadapt
+onda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda install cutadapt
+6. Have following subfolders in the "2021-RNAproject" folder:
+- data: containing all required .fastq.gz files
+- results: empty folder contains all results
+- doc: containing files of project notes
+- src: containing all of the code written for project
+- bin: containing executed programme from src
+
+-- Have following subfolders in the "results" folder
+- fastqc_multiqc_report: empty folder for fastqc&multiqc results
+- cutadapt: empty folder for .fastq.gz files after cutadapt 
+- cutadapt_report: empty folder for fastqc&multiqc results after cutadapt
+
+
+## Setting up labels for all samples
+````{R lables} 
+labels = c() #create empty vectors to which labels will be added
+for (i in 9:24){
+  new_label = paste("EW", i, sep = "") #create strings (e.g. "EW9")
+  labels = c(labels, new_label) #adding strings to vectors
+}
+print(labels) #print labels
+````
+
+## Write commands to a bash script file in which FastQC and MultiQC could be executed
+1. FastQC & MultiQC codes
+````{R fastqc&multiqc}
+command_vector = c("#!/bin/bash") #vector to store all commands
+for (i in 1:length(labels)){
+  new_command = paste("fastqc ~/Desktop/2021-RNAproject/data/", labels[i], ".fastq.gz --extract -o ~/Desktop/2021-RNAproject/results/fastqc_multiqc_report/", sep="") #creating new command lines of applying fastqc for all fastq files
+  command_vector = c(command_vector, new_command) #adding new command lines into vector
+} 
+command_vector = c(command_vector, "multiqc ~/Desktop/2021-RNAproject/results/fastqc_multiqc_report -o ~/Desktop/2021-RNAproject/results/fastqc_multiqc_report") #creating and adding new command lines of applying multiqc for all fastq files into bash script 
+print(command_vector) #print all command lines
+````
+
+2. Creating new script files
+````{R}
+fastqc_multiqc_file = file("fastqc_multiqc_script.sh") #creating a new bash file in the current directory
+writeLines(command_vector, fastqc_multiqc_file) #write entire command vector line by line to the script file
+close (fastqc_multiqc_file) #close the bash file
+````
+
+## Write commands to a bash script file in which Cutadapt and QC by FastQC and MultiQC could be executed
+1. Cutadapt codes
+````{R cutadapt}
+command_vector2 = c("#!/bin/bash") #vector to store all commands
+for (i in 1:length(labels)){
+  new_command2 = paste("cutadapt -a AGATCGGAAGAGCACACGTCTG ~/Desktop/2021-RNAproject/data/", labels[i], ".fastq.gz -o ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", labels[i], ".fastq.gz", sep="") #creating new command lines of cutting adaptors for all fastq files 
+  command_vector2 = c(command_vector2, new_command2) #adding new command lines  into vector 
+} 
+print(command_vector2) #print all command lines
+````
+
+2. FastQC & MultiQC codes for quality check
+````{R fastqc&multiqc}
+for (i in 1:length(labels)){
+  new_command2 = paste("fastqc ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", labels[i], ".fastq.gz --extract -o ~/Desktop/2021-RNAproject/results/cutadapt_report/", sep="") #creating new command line of running fastqc in all cutadapt-applied fastq files
+  command_vector2 = c(command_vector2, new_command2)
+} #adding new command line into vector
+command_vector2 = c(command_vector2, "multiqc ~/Desktop/2021-RNAproject/results/cutadapt_report -o ~/Desktop/2021-RNAproject/results/cutadapt_report") #creating and adding new command line of running multiqc in cutadapt-applied fastqc files for quality check into bash script 
+print(command_vector2) #print all command lines
+````
+
+3. Creating new script files
+````{R}
+cutadapt_file = file("cutadapt_script.sh") #creating a new bash file in the current directory
+writeLines(command_vector2, cutadapt_file) #write entire command vector line by line to the script file
+close (cutadapt_file) #close the bash file
+````
+
