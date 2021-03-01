@@ -1,0 +1,112 @@
+﻿,Function,"Saccharomyces cerevisiae
+(S288C) ",Location,"Ogataea Parapolymorpha
+(DL-1)",Location,Description,Source
+Upregulated genes,Heat responsive TF,Hsf1 (stress-responsive transcription factor),Chromosome: VII; NC_001139.9 (368753..371254),HPODL_00106 (Heat shock factor protein),"Chromosome: I; NC_027866.1 (214964..216910, complement)",,
+,Chaperones,SSA3 (Hsp70 family ATPase SSA3),"Chromosome: II; NC_001134.8 (84499..86448, complement)",HPODL_02202 (Heat shock protein SSB1),"Chromosome: I; NC_027866.1 (649224..651065, complement)","1. strain: BY4147 (MATa his3D1 leu2D0 met15D0 ura3D0)
+2. Temperature Conditions: 25 °C, 37 °C, 42 °C, 46 °C
+3. Heat shock duration: 1 min, 3 min, 5 min, 7 min, 10 min, 15 min, 30 min, 40 min, 80 min
+4. Significantly upregulated at 37°C and 42°C","Microarray data: GEO, 
+GSE132186"
+,,HSP42 (heat shock protein),Chromosome: IV; NC_001136.10 (806621..807748),NA,NA,,
+,,HSP82 (Hsp90 family chaperone),"Chromosome: XVI; NC_001148.4 (96496..98625, complement)",NA,NA,,
+,,HSP26 (chaperone protein),Chromosome: II; NC_001134.8 (382030..382674),NA,NA,,
+,,HSP104 (chaperone ATPase),Chromosome: XII; NC_001144.5 (88623..91349),NA,NA,,
+,Protein degradation ,PHB2 (prohibitin subunit),"Chromosome: VII; NC_001139.9 (952548..953480, complement)",HPODL_04801 (Prohibitin-2),Chromosome: II; NC_027865.1 (487520..488443),"1. Strain: wt-P82a
+2. Temperature Conditions: 25 °C, 37 °C
+3. Heat shock duration: 15, 30, 45, 60, and 120 min","Causton et al.'s study;
+ChipDB;
+Yeast Proteome Database"
+,,UBC5 (E2 ubiquitin-conjugating protein),"Chromosome: IV; NC_001136.10 (569234..569770, complement)",HPODL_04598 (Ubiquitin-conjugating enzyme E2 4),Chromosome: II; NC_027865.1 (125168..125611),,
+,,RPN5 (proteasome regulatory particle lid subunit ),Chromosome: IV; NC_001136.10 (190924..192261),NA,NA,,
+,,UBC8 (E2 ubiquitin-conjugating protein),Chromosome: V; NC_001137.3 (131772..132551),NA,NA,,
+,,YPS6 (aspartyl protease),"Chromosome: IX; NC_001141.2 (430498..432111, complement)",NA,NA,,
+,Trehalose metabolism,UGP1 (UTP glucose-1-phosphate uridylyltransferase),Chromosome: XI; NC_001143.9 (369891..371390),HPODL_02299 (UTP--glucose-1-phosphate uridylyltransferase),"Chromosome: I; NC_027866.1 (803824..805308, complement)","1. Strains: BY4741 WT and mip6D
+2. Temperature Conditions: 30 °C; 39 °C; 39 °C 
+3. Heat shock duration: 20 mins, 120 mins
+4. Strongest transcription upregulation in TSL1 and PGM2
+5. Expression changes in in mip6Δ cells were larger than in WT","MetaboLights, 
+MTBLS1320;
+mRNA-seq: GEO,
+GSE135568"
+,,"TPS1 (alpha,alpha-trehalose-phosphate synthase (UDP-forming))","Chromosome: II; NC_001134.8 (488905..490392, complement)","HPODL_03281 (Alpha,alpha-trehalose-phosphate synthase [UDP-forming])","Chromosome: IV; NC_027863.1 (462190..463617, complement)",,
+,,PGM2 (phosphoglucomutase),"Chromosome: XIII; NC_001145.3 (475897..477606, complement)",HPODL_05015 (Phosphoglucomutase-2),"Chromosome: II; NC_027865.1 (895214..896926, complement)",,
+,,TPS2 (trehalose-phosphatase),Chromosome: IV; NC_001136.10 (593893..596583),NA,NA,,
+,,TSL1 (trehalose 6-phosphate synthase/phosphatase complex subunit),Chromosome: XIII; NC_001145.3 (70624..73920),NA,NA,,
+,,"NTH1 (alpha,alpha-trehalase)","Chromosome: IV; NC_001136.10 (450220..452475, complement)",NA,NA,,
+,Glycerol metabolism ,ALD3 (aldehyde dehydrogenase (NAD(+))),"Chromosome: XIII; NC_001145.3 (599352..600872, complement)",HPODL_02460 (putative aldehyde dehydrogenase-like protein),"Chromosome: VII; NC_027860.1 (113114..114613, complement)","1. strain: BY4147 (MATa his3D1 leu2D0 met15D0 ura3D0)
+2. Temperature Conditions: 25 °C, 37 °C, 42 °C, 46 °C
+3. Heat shock duration: 1 min, 3 min, 5 min, 7 min, 10 min, 15 min, 30 min, 40 min, 80 min","Microarray data: GEO, 
+GSE132186;
+PRIDE database: PXD014189;
+SRA database: PRJNA548255"
+,,GCY1 (glycerol 2-dehydrogenase (NADP(+)) ),Chromosome: XV; NC_001147.6 (551114..552052),NA,NA,,
+,"Cell wall biogenesis 
+and maintenance",GFA1 (glutamine--fructose-6-phosphate transaminase (isomerizing) ),"Chromosome: XI; NC_001143.9 (243220..245373, complement)",HPODL_02794 (Glutamine--fructose-6-phosphate aminotransferase [isomerizing]),Chromosome: VII; NC_027860.1 (736791..738926),"1. Strain: wt-P82a
+2. Temperature Conditions: 25 °C, 37 °C
+3. Heat shock duration: 15, 30, 45, 60, and 120 min","Causton et al.'s study;
+ChipDB;
+Yeast Proteome Database"
+,,FLC2 (flavin adenine dinucleotide transporter ),Chromosome: I; NC_001133.9 (45899..48250),HPODL_02714 (Flavin carrier protein 2),Chromosome: VII; NC_027860.1 (608895..611120),,
+,,CHS3 (chitin synthase),"Chromosome: II; NC_001134.8 (284428..287925, complement)",HPODL_03182 (Chitin synthase D),Chromosome: VII; NC_027860.1 (1399446..1402763),,
+,,SLT2 (mitogen-activated serine/threonine-protein kinase),"Chromosome: VIII; NC_001140.6 (168890..170344, complement)",HPODL_04887 (Mitogen-activated protein kinase SLT2/MPK1),"Chromosome: II; NC_027865.1 (638447..639775, complement)",,
+,,CWP1 (Cwp1p),Chromosome: XI; NC_001143.9 (261132..261851),NA,NA,,
+,,FLC2 (flavin adenine dinucleotide transporter),Chromosome: I; NC_001133.9 (45899..48250),NA,NA,,
+,,HKR1 (Hkr1p),Chromosome: IV; NC_001136.10 (1306267..1311675),NA,NA,,
+,Glucose metabolism,HXK1 (hexokinase 1),"Chromosome: VI; NC_001138.5 (253592..255049, complement)",HPODL_04936 (Hexokinase-2),"Chromosome: II; NC_027865.1 (743083..744534, complement)","1. Strain: wt-P82a
+2. Temperature Conditions: 25 °C, 37 °C
+3. Heat shock duration: 15, 30, 45, 60, and 120 min","Causton et al.'s study;
+ChipDB;
+Yeast Proteome Database"
+,,GLK1 (glucokinase),Chromosome: III; NC_001135.5 (50838..52340),HPODL_04126 (Glucokinase-1),Chromosome: V; NC_027862.1 (651658..653073),,
+,,GPH1 (glycogen phosphorylase),Chromosome: XVI; NC_001148.4 (861306..864014),HPODL_01450 (Glycogen phosphorylase 1),Chromosome: VI; NC_027861.1 (601569..604151),,
+,Fatty acid metabolism,FAA1 (long-chain fatty acid-CoA ligase ),Chromosome: XV; NC_001147.6 (909343..911445),HPODL_02909 (Long chain fatty acyl-CoA synthetase),"Chromosome: VII; NC_027860.1 (933922..936027, complement)","1. Strain: wt-P82a
+2. Temperature Conditions: 25 °C, 37 °C
+3. Heat shock duration: 15, 30, 45, 60, and 120 min","Causton et al.'s study;
+ChipDB;
+Yeast Proteome Database"
+,,FAA4 ( long-chain fatty acid-CoA ligase),Chromosome: XIII; NC_001145.3 (759807..761891),NA,NA,,
+,Respiration,CYC7 (cytochrome c isoform 2),"Chromosome: V; NC_001137.3 (79636..79977, complement)",HPODL_04845 (Cytochrome c),"Chromosome: II; NC_027865.1 (566182..566514, complement)","1. Strain: wt-P82a
+2. Temperature Conditions: 25 °C, 37 °C
+3. Heat shock duration: 15, 30, 45, 60, and 120 min","Causton et al.'s study;
+ChipDB;
+Yeast Proteome Database"
+,,COX20 (Cox20p),"Chromosome: IV; NC_001136.10 (926293..926910, complement)",NA,NA,,
+Downregulagted genes,"Ribosomal protein
+genes",RPS31 (ubiquitin-ribosomal 40S subunit protein S31 fusion protein ),Chromosome: XII; NC_001144.5 (498947..499405),HPODL_02367 (Ubiquitin-40S ribosomal protein S27a),Chromosome: I; NC_027866.1 (899866..900321),"1. Strains: BY4741 wt and mip6D
+2. Temperature Conditions: 30 °C; 39 °C; 39 °C 
+3. Heat shock duration: 20 mins, 120 mins
+4. Similar response in wt and mip6D
+5. Drastic downregulation in 39 °C 20 min
+6. Validated by q-PCR ","mRNA-seq: GEO, 
+GSE135568"
+,,RPL10 (ribosomal 60S subunit protein L10),Chromosome: XII; NC_001144.5 (282927..283592),HPODL_00277 (60S ribosomal protein L10),Chromosome: III; NC_027864.1 (209654..210313),,
+,,RPS2 (ribosomal 40S subunit protein S2),Chromosome: VII; NC_001139.9 (277617..278381),HPODL_05028 (40S ribosomal protein S2),"Chromosome: II; NC_027865.1 (918630..919370, complement)",,
+,,RPS12 (ribosomal 40S subunit protein S12 ),"Chromosome: XV; NC_001147.6 (1028194..1028625, complement)",NA,NA,,
+,"Ribosomal biosynthesis 
+genes",SNU13 (RNA binding protein),Chromosome: V; NC_001137.3 (101943..102323),HPODL_02711 (ribonucleoprotein-associated protein),Chromosome: VII; NC_027860.1 (602664..603047),"1. Strains: BY4741 WT and mip6D
+2. Temperature Conditions: 30 °C; 39 °C; 39 °C 
+3. Heat shock duration: 20 mins, 120 mins
+4. Similar response in wt and mip6D
+5. Slight downregulation in 39 °C 20 min","mRNA-seq: GEO, 
+GSE135568"
+,,SDA1 (Sda1p),"Chromosome: VII; NC_001139.9 (979765..982068, complement)",HPODL_03848 (Protein SDA1),Chromosome: V; NC_027862.1 (136534..138759),,
+,,URB1 (Urb1p ),"Chromosome: XI; NC_001143.9 (411619..416913, complement)",NA,NA,,
+Unchanged genes,,PGK1 (phosphoglycerate kinase),Chromosome: III; NC_001135.5 (137746..138996),HPODL_04829 (Phosphoglycerate kinase),Chromosome: II; NC_027865.1 (531071..532321),"1. strain: BY4147 (MATa his3D1 leu2D0 met15D0 ura3D0)
+2.  Temperature Conditions: 25 °C, 37 °C, 42 °C, 46 °
+3.  Heat shock duration: 1 , 3, 5, 7, 10, 15, 30, 40, 80 min","Microarray data: GEO, 
+GSE132186;
+PRIDE database: PXD014189;
+SRA database: PRJNA548255"
+,,,,,,,
+,,,,,,,
+,,,,,,,
+Ref:,,,,,,,
+"1. The Heat Shock Response in Yeast Maintains Protein Homeostasis by Chaperoning and Replenishing Proteins
+2. ",,,,,,,
+2.  Identifying gene regulatory modules of heat shock response in yeast,,,,,,,
+3. Remodeling of Yeast Genome Expression in Response to Environmental Changes,,,,,,,
+4. Molecular characterization of Hsf1 as a master regulator of heat shock response in the thermotolerant methylotrophic yeast Ogataea parapolymorpha§,,,,,,,
+5. Genetic and epigenetic determinants establish a continuum of Hsf1 occupancy and activity across the yeast genome,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
