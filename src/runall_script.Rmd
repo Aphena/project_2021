@@ -25,7 +25,14 @@ onda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
 conda install cutadapt
-6. Have following subfolders in the "2021-RNAproject" folder:
+7. Install hisat2 and related tools
+conda install hisat2
+conda install -c bioconda ncbi-ngs-sdk
+conda install -c bioconda samtools
+conda install -c bioconda igvtools
+8. Install kallisto
+conda install kallisto
+9. Have following subfolders in the "2021-RNAproject" folder:
 - data: containing all required .fastq.gz files
 - results: empty folder contains all results
 - doc: containing files of project notes
@@ -46,6 +53,26 @@ for (i in 9:24){
   labels = c(labels, new_label) #adding strings to vectors
 }
 print(labels) #print labels
+````
+
+## Setting up labels for all SC samples
+````{R SC_lables} 
+SC_labels = c() #create empty vectors to which labels will be added
+for (i in 9:16){
+  SC_new_label = paste("EW", i, sep = "") #create strings (e.g. "EW9")
+  SC_labels = c(SC_labels, SC_new_label) #adding strings to vectors
+}
+print(SC_labels) #print labels
+````
+
+## Setting up labels for all OP samples
+````{R OP_lables} 
+OP_labels = c() #create empty vectors to which labels will be added
+for (i in 17:24){
+  OP_new_label = paste("EW", i, sep = "") #create strings (e.g. "EW9")
+  OP_labels = c(OP_labels, OP_new_label) #adding strings to vectors
+}
+print(OP_labels) #print labels
 ````
 
 ## Write commands to a bash script file in which FastQC and MultiQC could be executed
@@ -72,7 +99,7 @@ close (fastqc_multiqc_file) #close the bash file
 ````{R cutadapt}
 command_vector2 = c("#!/bin/bash") #vector to store all commands
 for (i in 1:length(labels)){
-  new_command2 = paste("cutadapt -a AGATCGGAAGAGCACACGTCTG ~/Desktop/2021-RNAproject/data/", labels[i], ".fastq.gz -o ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", labels[i], ".fastq.gz", sep="") #creating new command lines of cutting adaptors for all fastq files 
+  new_command2 = paste("cutadapt -a AGATCGGAAGAGCACACGTCTG ~/Desktop/2021-RNAproject/data/", labels[i], ".fastq.gz -o ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", labels[i], ".fastq.gz --minimum-length 21", sep="") #creating new command lines of cutting adaptors for all fastq files 
   command_vector2 = c(command_vector2, new_command2) #adding new command lines  into vector 
 } 
 print(command_vector2) #print all command lines
@@ -95,3 +122,74 @@ writeLines(command_vector2, cutadapt_file) #write entire command vector line by 
 close (cutadapt_file) #close the bash file
 ````
 
+## Write commands to a bash script file in which hisat2 could be executed
+1. Download reference genome (genomic.gtf, genomic.fna) from
+SC refer R64: https://www.ncbi.nlm.nih.gov/assembly/GCF_000146045.2
+OP refer Hansenula2: https://www.ncbi.nlm.nih.gov/assembly/GCF_000187245.1
+
+save all SC refer in "R64", the subfolder of "alignment" folder
+save all OP refer in "Hansenula2", the subfolder of "alignment" folder
+
+2. For all SC samples, add hisat2 index to SC reference genome and generate splice junction reference
+````{R SC_index}
+hisat2_vector = ("#!/bin/bash") #vector to store all commands
+SC_index_command = paste("hisat2-build -p 16 ./results/alignment_SC/R64_genome.fna ./results/alignment_SC/R64_index/R64_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_SC/R64_genomic.gtf > ./results/alignment_SC/R64_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
+hisat2_vector = c(hisat2_vector, SC_index_command) #add new command lines into vector
+print(hisat2_vector) #print vector
+````
+
+3. Run hisat2 for SC reads alignment to reference genome
+````{R SC_hisat2}
+for (i in 1:length(SC_labels)){
+  SC_hisat2_command = paste ("hisat2 -p 16 -k 1 -x ./results/alignment_SC/R64_index/R64_genome.fna -U ./results/cutadapt/cutadapt", SC_labels[i], ".fastq.gz -S ", SC_labels[i], ".SAM --known-splicesite-infile ./results/alignment_SC/R64_splicesites.txt --max-intronlen 2000", sep = "") #create new command lines of running hisat2 in all SC samples
+  SC_move_command = paste("mv ", SC_labels[i], ".SAM ./results/alignment_SC/SC_results/", sep = "") #create new command lines of moving hisat2 alignment results (.sam files) of all SC samples to expected folder
+  hisat2_vector = c(hisat2_vector, SC_hisat2_command, SC_move_command)
+} #add new command lines into vector
+print(hisat2_vector) #print vector
+````
+
+4. Change .sam to .bam by samtools for igv visulization for all SC samples
+````{R SC_samtools}
+for (i in 1:length(SC_labels)){
+  SC_change_command = paste("samtools view -S -b ./results/alignment_SC/SC_results/", SC_labels[i], ".SAM > ./results/alignment_SC/SC_results/", SC_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each SC sample
+  SC_sort_command = paste("samtools sort ./results/alignment_SC/SC_results/", SC_labels[i], " -o ./results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each SC sample
+  SC_STindex_command = paste("samtools index ./results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each SC sample
+  hisat2_vector = c(hisat2_vector, SC_change_command, SC_sort_command, SC_STindex_command) #add new command lines into vector
+}
+print(hisat2_vector) #print vector
+````
+
+5. For all OP samples, add hisat2 index to OP reference genome and generate splice junction reference
+````{R OP_index}
+OP_index_command = paste("hisat2-build -p 16 ./results/alignment_OP/Hansenula2_genome.fna ./results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_OP/Hansenula2_genomic.gtf > ./results/alignment_OP/Hansenula2_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
+hisat2_vector = c(hisat2_vector, OP_index_command) #add new command lines into vector
+print(hisat2_vector) #print vector
+````
+
+6. Run hisat2 for OP reads alignment to reference genome
+````{R OP_hisat2}
+for (i in 1:length(OP_labels)){
+  OP_hisat2_command = paste ("hisat2 -p 16 -k 1 -x ./results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna -U ./results/cutadapt/cutadapt", OP_labels[i], ".fastq.gz -S ", OP_labels[i], ".SAM --known-splicesite-infile ./results/alignment_OP/Hansenula2_splicesites.txt --max-intronlen 2000", sep = "") #create new command lines of running hisat2 in all OP samples
+  OP_move_command = paste("mv ", OP_labels[i], ".SAM ./results/alignment_OP/OP_results/", sep = "") #create new command lines of moving hisat2 alignment results (.sam files) of all OP samples to expected folder
+  hisat2_vector = c(hisat2_vector, OP_hisat2_command, OP_move_command)
+} #add new command lines into vector
+print(hisat2_vector) #print vector
+````
+
+7. Change .sam to .bam by samtools for igv visulization for all OP samples
+````{R SC_samtools}
+for (i in 1:length(OP_labels)){
+  OP_change_command = paste("samtools view -S -b ./results/alignment_OP/OP_results/", OP_labels[i], ".SAM > ./results/alignment_OP/OP_results/", OP_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each OP sample
+  OP_sort_command = paste("samtools sort ./results/alignment_OP/OP_results/", OP_labels[i], " -o ./results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each OP sample
+  OP_STindex_command = paste("samtools index ./results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each OP sample
+  hisat2_vector = c(hisat2_vector, OP_change_command, OP_sort_command, OP_STindex_command) #add new command lines into vector
+}
+print(hisat2_vector) #print vector
+````
+
+8. Create new script files
+````{R}
+hisat2_file = file("hisat2_script.sh") #creating a new bash file in the current directory
+writeLines(hisat2_vector, hisat2_file) #write entire command vector line by line to the script file
+close (hisat2_file) #close the bash file
+````
