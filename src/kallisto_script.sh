@@ -1,0 +1,19 @@
+#!/bin/bash
+kallisto index -k 27 -i ./results/kallisto_SC/R64_transcripts.idx ./results/kallisto_SC/R64_transcriptome.fna
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW9_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW9.fastq.gz
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW10_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW10.fastq.gz
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW11_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW11.fastq.gz
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW12_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW12.fastq.gz
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW13_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW13.fastq.gz
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW14_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW14.fastq.gz
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW15_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW15.fastq.gz
+kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/EW16_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadaptEW16.fastq.gz
+kallisto index -k 27 -i ./results/kallisto_OP/Hansenula2_transcripts.idx ./results/kallisto_OP/Hansenula2_transcriptom.fna
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW17_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW17.fastq.gz
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW18_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW18.fastq.gz
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW19_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW19.fastq.gz
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW20_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW20.fastq.gz
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW21_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW21.fastq.gz
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW22_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW22.fastq.gz
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW23_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW23.fastq.gz
+kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/EW24_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadaptEW24.fastq.gz

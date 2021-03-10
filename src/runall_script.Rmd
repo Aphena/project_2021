@@ -126,15 +126,14 @@ close (cutadapt_file) #close the bash file
 1. Download reference genome (genomic.gtf, genomic.fna) from
 SC refer R64: https://www.ncbi.nlm.nih.gov/assembly/GCF_000146045.2
 OP refer Hansenula2: https://www.ncbi.nlm.nih.gov/assembly/GCF_000187245.1
-
-save all SC refer in "R64", the subfolder of "alignment" folder
-save all OP refer in "Hansenula2", the subfolder of "alignment" folder
+save all SC refer in "alignment_SC", the subfolder of "results" 
+save all OP refer in "alignment_OP", the subfolder of "results"
 
 2. For all SC samples, add hisat2 index to SC reference genome and generate splice junction reference
 ````{R SC_index}
 hisat2_vector = ("#!/bin/bash") #vector to store all commands
-SC_index_command = paste("hisat2-build -p 16 ./results/alignment_SC/R64_genome.fna ./results/alignment_SC/R64_index/R64_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_SC/R64_genomic.gtf > ./results/alignment_SC/R64_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
-hisat2_vector = c(hisat2_vector, SC_index_command) #add new command lines into vector
+SC_hisat2_index_command = paste("hisat2-build -p 16 ./results/alignment_SC/R64_genome.fna ./results/alignment_SC/R64_index/R64_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_SC/R64_genomic.gtf > ./results/alignment_SC/R64_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
+hisat2_vector = c(hisat2_vector, SC_hisat2_index_command) #add new command lines into vector
 print(hisat2_vector) #print vector
 ````
 
@@ -152,7 +151,7 @@ print(hisat2_vector) #print vector
 ````{R SC_samtools}
 for (i in 1:length(SC_labels)){
   SC_change_command = paste("samtools view -S -b ./results/alignment_SC/SC_results/", SC_labels[i], ".SAM > ./results/alignment_SC/SC_results/", SC_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each SC sample
-  SC_sort_command = paste("samtools sort ./results/alignment_SC/SC_results/", SC_labels[i], " -o ./results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each SC sample
+  SC_sort_command = paste("samtools sort ./results/alignment_SC/SC_results/", SC_labels[i], ".bam -o ./results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each SC sample
   SC_STindex_command = paste("samtools index ./results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each SC sample
   hisat2_vector = c(hisat2_vector, SC_change_command, SC_sort_command, SC_STindex_command) #add new command lines into vector
 }
@@ -161,8 +160,8 @@ print(hisat2_vector) #print vector
 
 5. For all OP samples, add hisat2 index to OP reference genome and generate splice junction reference
 ````{R OP_index}
-OP_index_command = paste("hisat2-build -p 16 ./results/alignment_OP/Hansenula2_genome.fna ./results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_OP/Hansenula2_genomic.gtf > ./results/alignment_OP/Hansenula2_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
-hisat2_vector = c(hisat2_vector, OP_index_command) #add new command lines into vector
+OP_hisat2_index_command = paste("hisat2-build -p 16 ./results/alignment_OP/Hansenula2_genome.fna ./results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_OP/Hansenula2_genomic.gtf > ./results/alignment_OP/Hansenula2_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
+hisat2_vector = c(hisat2_vector, OP_hisat2_index_command) #add new command lines into vector
 print(hisat2_vector) #print vector
 ````
 
@@ -177,10 +176,10 @@ print(hisat2_vector) #print vector
 ````
 
 7. Change .sam to .bam by samtools for igv visulization for all OP samples
-````{R SC_samtools}
+````{R OP_samtools}
 for (i in 1:length(OP_labels)){
   OP_change_command = paste("samtools view -S -b ./results/alignment_OP/OP_results/", OP_labels[i], ".SAM > ./results/alignment_OP/OP_results/", OP_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each OP sample
-  OP_sort_command = paste("samtools sort ./results/alignment_OP/OP_results/", OP_labels[i], " -o ./results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each OP sample
+  OP_sort_command = paste("samtools sort ./results/alignment_OP/OP_results/", OP_labels[i], ".bam -o ./results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each OP sample
   OP_STindex_command = paste("samtools index ./results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each OP sample
   hisat2_vector = c(hisat2_vector, OP_change_command, OP_sort_command, OP_STindex_command) #add new command lines into vector
 }
@@ -192,4 +191,51 @@ print(hisat2_vector) #print vector
 hisat2_file = file("hisat2_script.sh") #creating a new bash file in the current directory
 writeLines(hisat2_vector, hisat2_file) #write entire command vector line by line to the script file
 close (hisat2_file) #close the bash file
+````
+
+## Write commands to a bash script file in which hisat2 could be executed
+1. Download reference transcriptome (genomic.gtf, RNA.fna) from
+SC refer R64: https://www.ncbi.nlm.nih.gov/assembly/GCF_000146045.2
+OP refer Hansenula2: https://www.ncbi.nlm.nih.gov/assembly/GCF_000187245.1
+save all SC refer in "kallisto_SC", the subfolder of "results" 
+save all OP refer in "kallisto_OP", the subfolder of "results"
+
+2. Add kallisto index to SC reference transcriptom 
+````{R SC_index}
+kallisto_vector = ("#!/bin/bash") #vector to store all commands
+SC_kallisto_index_command = paste("kallisto index -k 27 -i ./results/kallisto_SC/R64_transcripts.idx ./results/kallisto_SC/R64_transcriptome.fna") #create new command lines for add kallisto index to the SC reference transcriptome
+kallisto_vector = c(kallisto_vector, SC_kallisto_index_command) #add new command lines into vector
+print(kallisto_vector) #print vector
+````
+
+3. Run kallisto for transcript quantification in all SC samples
+````{R SC_kallisto}
+for (i in 1:length(SC_labels)){
+  SC_kallisto_command = paste ("kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/", SC_labels[i], "_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadapt", SC_labels[i], ".fastq.gz", sep = "") #create new command lines of running kallisto in all SC samples and generating .bam files for visulisation
+  kallisto_vector = c(kallisto_vector, SC_kallisto_command)
+} #add new command lines into vector
+print(kallisto_vector) #print vector
+````
+
+4. Add kallisto index to OP reference transcriptom 
+````{R OP_index}
+OP_kallisto_index_command = paste("kallisto index -k 27 -i ./results/kallisto_OP/Hansenula2_transcripts.idx ./results/kallisto_OP/Hansenula2_transcriptom.fna") #create new command lines for add kallisto index to the OP reference transcriptome
+kallisto_vector = c(kallisto_vector, OP_kallisto_index_command) #add new command lines into vector
+print(kallisto_vector) #print vector
+````
+
+5. Run kallisto for transcript quantification in all SC samples
+````{R OP_kallisto}
+for (i in 1:length(OP_labels)){
+  OP_kallisto_command = paste ("kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/", OP_labels[i], "_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadapt", OP_labels[i], ".fastq.gz", sep = "") #create new command lines of running kallisto in all OP samples and generating .bam files for visulisation
+  kallisto_vector = c(kallisto_vector, OP_kallisto_command)
+} #add new command lines into vector
+print(kallisto_vector) #print vector
+````
+
+6. Create new script files
+````{R}
+kallisto_file = file("kallisto_script.sh") #creating a new bash file in the current directory
+writeLines(kallisto_vector, hisat2_file) #write entire command vector line by line to the script file
+close (kallisto_file) #close the bash file
 ````
