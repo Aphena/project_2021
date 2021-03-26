@@ -6,7 +6,18 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library("ggplot2")
+library("GGally")
+library("reshape2")
+library("gplots")
+library("tximport")
+library("readr")
+library("DESeq2")
+library("dplyr")
+library("readr")
+library("rhdf5")
+library("tidyverse")
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, warning = FALSE)
 ```
 
 ## Runing all bash codes in conda environment 
@@ -132,7 +143,7 @@ save all OP refer in "alignment_OP", the subfolder of "results"
 2. For all SC samples, add hisat2 index to SC reference genome and generate splice junction reference
 ````{R SC_index}
 hisat2_vector = ("#!/bin/bash") #vector to store all commands
-SC_hisat2_index_command = paste("hisat2-build -p 16 ./results/alignment_SC/R64_genome.fna ./results/alignment_SC/R64_index/R64_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_SC/R64_genomic.gtf > ./results/alignment_SC/R64_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
+SC_hisat2_index_command = paste("hisat2-build -p 16 ~/Desktop/2021-RNAproject/results/alignment_SC/R64_genome.fna ~/Desktop/2021-RNAproject/results/alignment_SC/R64_index/R64_genome.fna", "hisat2_extract_splice_sites.py ~/Desktop/2021-RNAproject/results/alignment_SC/R64_genomic.gtf > ~/Desktop/2021-RNAproject/results/alignment_SC/R64_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
 hisat2_vector = c(hisat2_vector, SC_hisat2_index_command) #add new command lines into vector
 print(hisat2_vector) #print vector
 ````
@@ -140,8 +151,8 @@ print(hisat2_vector) #print vector
 3. Run hisat2 for SC reads alignment to reference genome
 ````{R SC_hisat2}
 for (i in 1:length(SC_labels)){
-  SC_hisat2_command = paste ("hisat2 -p 16 -k 1 -x ./results/alignment_SC/R64_index/R64_genome.fna -U ./results/cutadapt/cutadapt", SC_labels[i], ".fastq.gz -S ", SC_labels[i], ".SAM --known-splicesite-infile ./results/alignment_SC/R64_splicesites.txt --max-intronlen 2000", sep = "") #create new command lines of running hisat2 in all SC samples
-  SC_move_command = paste("mv ", SC_labels[i], ".SAM ./results/alignment_SC/SC_results/", sep = "") #create new command lines of moving hisat2 alignment results (.sam files) of all SC samples to expected folder
+  SC_hisat2_command = paste ("hisat2 -p 16 --summary-file ~/Desktop/2021-RNAproject/results/alignment_SC/SC_results/", SC_labels[i], ".summary.txt -k 1 -x ~/Desktop/2021-RNAproject/results/alignment_SC/R64_index/R64_genome.fna -U ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", SC_labels[i], ".fastq.gz -S ", SC_labels[i], ".SAM --known-splicesite-infile ~/Desktop/2021-RNAproject/results/alignment_SC/R64_splicesites.txt --max-intronlen 2000", sep = "") #create new command lines of running hisat2 in all SC samples
+  SC_move_command = paste("mv ", SC_labels[i], ".SAM ~/Desktop/2021-RNAproject/results/alignment_SC/SC_results/", sep = "") #create new command lines of moving hisat2 alignment results (.sam files) of all SC samples to expected folder
   hisat2_vector = c(hisat2_vector, SC_hisat2_command, SC_move_command)
 } #add new command lines into vector
 print(hisat2_vector) #print vector
@@ -150,9 +161,9 @@ print(hisat2_vector) #print vector
 4. Change .sam to .bam by samtools for igv visulization for all SC samples
 ````{R SC_samtools}
 for (i in 1:length(SC_labels)){
-  SC_change_command = paste("samtools view -S -b ./results/alignment_SC/SC_results/", SC_labels[i], ".SAM > ./results/alignment_SC/SC_results/", SC_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each SC sample
-  SC_sort_command = paste("samtools sort ./results/alignment_SC/SC_results/", SC_labels[i], ".bam -o ./results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each SC sample
-  SC_STindex_command = paste("samtools index ./results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each SC sample
+  SC_change_command = paste("samtools view -S -b ~/Desktop/2021-RNAproject/results/alignment_SC/SC_results/", SC_labels[i], ".SAM > ~/Desktop/2021-RNAproject/results/alignment_SC/SC_results/", SC_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each SC sample
+  SC_sort_command = paste("samtools sort ~/Desktop/2021-RNAproject/results/alignment_SC/SC_results/", SC_labels[i], ".bam -o ~/Desktop/2021-RNAproject/results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each SC sample
+  SC_STindex_command = paste("samtools index ~/Desktop/2021-RNAproject/results/alignment_SC/SC_results/", SC_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each SC sample
   hisat2_vector = c(hisat2_vector, SC_change_command, SC_sort_command, SC_STindex_command) #add new command lines into vector
 }
 print(hisat2_vector) #print vector
@@ -160,7 +171,7 @@ print(hisat2_vector) #print vector
 
 5. For all OP samples, add hisat2 index to OP reference genome and generate splice junction reference
 ````{R OP_index}
-OP_hisat2_index_command = paste("hisat2-build -p 16 ./results/alignment_OP/Hansenula2_genome.fna ./results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna", "hisat2_extract_splice_sites.py ./results/alignment_OP/Hansenula2_genomic.gtf > ./results/alignment_OP/Hansenula2_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
+OP_hisat2_index_command = paste("hisat2-build -p 16 ~/Desktop/2021-RNAproject/results/alignment_OP/Hansenula2_genome.fna ~/Desktop/2021-RNAproject/results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna", "hisat2_extract_splice_sites.py ~/Desktop/2021-RNAproject/results/alignment_OP/Hansenula2_genomic.gtf > ~/Desktop/2021-RNAproject/results/alignment_OP/Hansenula2_splicesites.txt", sep = "\n") #create new command lines for add hisat2 index to the reference genome and generate splice junction reference
 hisat2_vector = c(hisat2_vector, OP_hisat2_index_command) #add new command lines into vector
 print(hisat2_vector) #print vector
 ````
@@ -168,8 +179,8 @@ print(hisat2_vector) #print vector
 6. Run hisat2 for OP reads alignment to reference genome
 ````{R OP_hisat2}
 for (i in 1:length(OP_labels)){
-  OP_hisat2_command = paste ("hisat2 -p 16 -k 1 -x ./results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna -U ./results/cutadapt/cutadapt", OP_labels[i], ".fastq.gz -S ", OP_labels[i], ".SAM --known-splicesite-infile ./results/alignment_OP/Hansenula2_splicesites.txt --max-intronlen 2000", sep = "") #create new command lines of running hisat2 in all OP samples
-  OP_move_command = paste("mv ", OP_labels[i], ".SAM ./results/alignment_OP/OP_results/", sep = "") #create new command lines of moving hisat2 alignment results (.sam files) of all OP samples to expected folder
+  OP_hisat2_command = paste ("hisat2 -p 16 --summary-file ~/Desktop/2021-RNAproject/results/alignment_OP/OP_results/", OP_labels[i], ".summary.txt -k 1 -x ~/Desktop/2021-RNAproject/results/alignment_OP/Hansenula2_index/Hansenula2_genome.fna -U ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", OP_labels[i], ".fastq.gz -S ", OP_labels[i], ".SAM --known-splicesite-infile ~/Desktop/2021-RNAproject/results/alignment_OP/Hansenula2_splicesites.txt --max-intronlen 2000", sep = "") #create new command lines of running hisat2 in all OP samples
+  OP_move_command = paste("mv ", OP_labels[i], ".SAM ~/Desktop/2021-RNAproject/results/alignment_OP/OP_results/", sep = "") #create new command lines of moving hisat2 alignment results (.sam files) of all OP samples to expected folder
   hisat2_vector = c(hisat2_vector, OP_hisat2_command, OP_move_command)
 } #add new command lines into vector
 print(hisat2_vector) #print vector
@@ -178,9 +189,9 @@ print(hisat2_vector) #print vector
 7. Change .sam to .bam by samtools for igv visulization for all OP samples
 ````{R OP_samtools}
 for (i in 1:length(OP_labels)){
-  OP_change_command = paste("samtools view -S -b ./results/alignment_OP/OP_results/", OP_labels[i], ".SAM > ./results/alignment_OP/OP_results/", OP_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each OP sample
-  OP_sort_command = paste("samtools sort ./results/alignment_OP/OP_results/", OP_labels[i], ".bam -o ./results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each OP sample
-  OP_STindex_command = paste("samtools index ./results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each OP sample
+  OP_change_command = paste("samtools view -S -b ~/Desktop/2021-RNAproject/results/alignment_OP/OP_results/", OP_labels[i], ".SAM > ~/Desktop/2021-RNAproject/results/alignment_OP/OP_results/", OP_labels[i], ".bam", sep = "") #create new command lines of changing .sam files to .bam files for each OP sample
+  OP_sort_command = paste("samtools sort ~/Desktop/2021-RNAproject/results/alignment_OP/OP_results/", OP_labels[i], ".bam -o ~/Desktop/2021-RNAproject/results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of sorting .bam files for each OP sample
+  OP_STindex_command = paste("samtools index ~/Desktop/2021-RNAproject/results/alignment_OP/OP_results/", OP_labels[i], ".sorted.bam", sep = "") #create new command lines of indexing .bam files for each OP sample
   hisat2_vector = c(hisat2_vector, OP_change_command, OP_sort_command, OP_STindex_command) #add new command lines into vector
 }
 print(hisat2_vector) #print vector
@@ -203,7 +214,7 @@ save all OP refer in "kallisto_OP", the subfolder of "results"
 2. Add kallisto index to SC reference transcriptom 
 ````{R SC_index}
 kallisto_vector = ("#!/bin/bash") #vector to store all commands
-SC_kallisto_index_command = paste("kallisto index -k 27 -i ./results/kallisto_SC/R64_transcripts.idx ./results/kallisto_SC/R64_transcriptome.fna") #create new command lines for add kallisto index to the SC reference transcriptome
+SC_kallisto_index_command = paste("kallisto index -k 27 -i ~/Desktop/2021-RNAproject/results/kallisto_SC/R64_transcripts.idx ~/Desktop/2021-RNAproject/results/kallisto_SC/R64_transcriptome.fna") #create new command lines for add kallisto index to the SC reference transcriptome
 kallisto_vector = c(kallisto_vector, SC_kallisto_index_command) #add new command lines into vector
 print(kallisto_vector) #print vector
 ````
@@ -211,15 +222,16 @@ print(kallisto_vector) #print vector
 3. Run kallisto for transcript quantification in all SC samples
 ````{R SC_kallisto}
 for (i in 1:length(SC_labels)){
-  SC_kallisto_command = paste ("kallisto quant -i ./results/kallisto_SC/R64_transcripts.idx -o ./results/kallisto_SC/", SC_labels[i], "_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_SC/R64_genomic.gtf ./results/cutadapt/cutadapt", SC_labels[i], ".fastq.gz", sep = "") #create new command lines of running kallisto in all SC samples and generating .bam files for visulisation
-  kallisto_vector = c(kallisto_vector, SC_kallisto_command)
+  SC_kallisto_command = paste ("kallisto quant -i ~/Desktop/2021-RNAproject/results/kallisto_SC/R64_transcripts.idx -o ~/Desktop/2021-RNAproject/results/kallisto_SC/", SC_labels[i], "_results -b 100 --single -l 180 -s 20 --genomebam --gtf ~/Desktop/2021-RNAproject/results/kallisto_SC/R64_genomic.gtf ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", SC_labels[i], ".fastq.gz", sep = "") #create new command lines of running kallisto in all SC samples and generating .bam files for visulisation
+  move_SC_tsv = paste("mv ~/Desktop/2021-RNAproject/results/kallisto_SC/", SC_labels[i], "_results/abundance.tsv ~/Desktop/2021-RNAproject/results/kallisto_tsv/", SC_labels[i], ".abundance.tsv", sep = "")
+  kallisto_vector = c(kallisto_vector, SC_kallisto_command, move_SC_tsv)
 } #add new command lines into vector
 print(kallisto_vector) #print vector
 ````
 
 4. Add kallisto index to OP reference transcriptom 
 ````{R OP_index}
-OP_kallisto_index_command = paste("kallisto index -k 27 -i ./results/kallisto_OP/Hansenula2_transcripts.idx ./results/kallisto_OP/Hansenula2_transcriptom.fna") #create new command lines for add kallisto index to the OP reference transcriptome
+OP_kallisto_index_command = paste("kallisto index -k 27 -i ~/Desktop/2021-RNAproject/results/kallisto_OP/Hansenula2_transcripts.idx ~/Desktop/2021-RNAproject/results/kallisto_OP/Hansenula2_transcriptom.fna") #create new command lines for add kallisto index to the OP reference transcriptome
 kallisto_vector = c(kallisto_vector, OP_kallisto_index_command) #add new command lines into vector
 print(kallisto_vector) #print vector
 ````
@@ -227,8 +239,9 @@ print(kallisto_vector) #print vector
 5. Run kallisto for transcript quantification in all SC samples
 ````{R OP_kallisto}
 for (i in 1:length(OP_labels)){
-  OP_kallisto_command = paste ("kallisto quant -i ./results/kallisto_OP/Hansenula2_transcripts.idx -o ./results/kallisto_OP/", OP_labels[i], "_results -b 100 --single -l 180 -s 20 --genomebam --gtf ./results/kallisto_OP/Hansenula2_genomic.gtf ./results/cutadapt/cutadapt", OP_labels[i], ".fastq.gz", sep = "") #create new command lines of running kallisto in all OP samples and generating .bam files for visulisation
-  kallisto_vector = c(kallisto_vector, OP_kallisto_command)
+  OP_kallisto_command = paste ("kallisto quant -i ~/Desktop/2021-RNAproject/results/kallisto_OP/Hansenula2_transcripts.idx -o ~/Desktop/2021-RNAproject/results/kallisto_OP/", OP_labels[i], "_results -b 100 --single -l 180 -s 20 --genomebam --gtf ~/Desktop/2021-RNAproject/results/kallisto_OP/Hansenula2_genomic.gtf ~/Desktop/2021-RNAproject/results/cutadapt/cutadapt", OP_labels[i], ".fastq.gz", sep = "") #create new command lines of running kallisto in all OP samples and generating .bam files for visulisation
+  move_OP_tsv = paste("mv ~/Desktop/2021-RNAproject/results/kallisto_OP/", OP_labels[i], "_results/abundance.tsv ~/Desktop/2021-RNAproject/results/kallisto_tsv/", OP_labels[i], ".abundance.tsv", sep = "")
+  kallisto_vector = c(kallisto_vector, OP_kallisto_command, move_OP_tsv)
 } #add new command lines into vector
 print(kallisto_vector) #print vector
 ````
@@ -239,3 +252,371 @@ kallisto_file = file("kallisto_script.sh") #creating a new bash file in the curr
 writeLines(kallisto_vector, hisat2_file) #write entire command vector line by line to the script file
 close (kallisto_file) #close the bash file
 ````
+
+## Analysis of kallisto results
+1. Load all tsv files and reset the names of each file
+````{R}
+kallisto_tsv_list <- list.files(path = "~/Desktop/2021-RNAproject/results/kallisto_tsv") #read files named EW9.abundance.tsv, EW10.abundance.tsv.. in the folder "kallisto_tsv"
+for(i in 1:length(labels)){
+  kallisto_filepath <- file.path("~/Desktop/2021-RNAproject/results/kallisto_tsv/", paste(labels[i], ".abundance.tsv", sep = "")) #create file path of all tsv files
+  oname = paste(labels[i], "_kallisto", sep = "") #create new names of tsv files as EW9_kallisto, EW10_kallisto,....
+  assign(oname, read.csv(kallisto_filepath, sep = "", header = T)) #load all tsv files in the separate dataframe with new names
+}
+````
+
+2. Change the names of column and make sure each colname is different from each other
+````{R}
+colnames(EW9_kallisto) <- c("EW9_target_id_name", "EW9_length", "EW9_eff_length", "EW9_counts", "EW9_tpm")
+colnames(EW10_kallisto) <- c("EW10_target_id_name", "EW10_length", "EW10_eff_length", "EW10_counts", "EW10_tpm")
+colnames(EW11_kallisto) <- c("EW11_target_id_name", "EW11_length", "EW11_eff_length", "EW11_counts", "EW11_tpm")
+colnames(EW12_kallisto) <- c("EW12_target_id_name", "EW12_length", "EW12_eff_length", "EW12_counts", "EW12_tpm")
+colnames(EW13_kallisto) <- c("EW13_target_id_name", "EW13_length", "EW13_eff_length", "EW13_counts", "EW13_tpm")
+colnames(EW14_kallisto) <- c("EW14_target_id_name", "EW14_length", "EW14_eff_length", "EW14_counts", "EW14_tpm")
+colnames(EW15_kallisto) <- c("EW15_target_id_name", "EW15_length", "EW15_eff_length", "EW15_counts", "EW15_tpm")
+colnames(EW16_kallisto) <- c("EW16_target_id_name", "EW16_length", "EW16_eff_length", "EW16_counts", "EW16_tpm")
+colnames(EW17_kallisto) <- c("EW17_target_id_name", "EW17_length", "EW17_eff_length", "EW17_counts", "EW17_tpm")
+colnames(EW18_kallisto) <- c("EW18_target_id_name", "EW18_length", "EW18_eff_length", "EW18_counts", "EW18_tpm")
+colnames(EW19_kallisto) <- c("EW19_target_id_name", "EW19_length", "EW19_eff_length", "EW19_counts", "EW19_tpm")
+colnames(EW20_kallisto) <- c("EW20_target_id_name", "EW20_length", "EW20_eff_length", "EW20_counts", "EW20_tpm")
+colnames(EW21_kallisto) <- c("EW21_target_id_name", "EW21_length", "EW21_eff_length", "EW21_counts", "EW21_tpm")
+colnames(EW22_kallisto) <- c("EW22_target_id_name", "EW22_length", "EW22_eff_length", "EW22_counts", "EW22_tpm")
+colnames(EW23_kallisto) <- c("EW23_target_id_name", "EW23_length", "EW23_eff_length", "EW23_counts", "EW23_tpm")
+colnames(EW24_kallisto) <- c("EW24_target_id_name", "EW24_length", "EW24_eff_length", "EW24_counts", "EW24_tpm")
+````
+
+3. Create count and tpm data.frames for SC and OP samples respectively
+````{R}
+kallisto_SC_df <- cbind(EW9_kallisto, EW10_kallisto, EW11_kallisto, EW12_kallisto, EW13_kallisto, EW14_kallisto, EW15_kallisto, EW16_kallisto) #combine all SC data.frames
+kallisto_SC_tpm_df <- kallisto_SC_df[, grepl("tpm", names(kallisto_SC_df))] #only extract columns with "tpm" in all SC samples and bind with "transcript_id" column
+kallisto_SC_counts_df <- kallisto_SC_df[, grepl("counts", names(kallisto_SC_df))] #only extract columns with "counts" in all SC samples and bind with "transcript_id" column
+
+SC_readTPM <- cbind(kallisto_SC_df$EW9_target_id_name, kallisto_SC_tpm_df) #create SC tpm df 
+colnames(SC_readTPM)[colnames(SC_readTPM) == "kallisto_SC_df$EW9_target_id_name"] <- "transcript_id" #change the first column names of SC_TPMCounts into "transcript_id"
+rownames(SC_readTPM) <- SC_readTPM$transcript_id #assign the first column to rownames
+SC_readTPM <- SC_readTPM[,-1] #delete the first column of "transcript_id"
+SC_logReadTPM_old = log2(SC_readTPM) #apply log2 transformation to all SC samples
+SC_logReadTPM = log2(1+SC_readTPM) #apply log2+1 transformation to all SC samples
+
+kallisto_OP_df <- cbind(EW17_kallisto, EW18_kallisto, EW19_kallisto, EW20_kallisto, EW21_kallisto, EW22_kallisto, EW23_kallisto, EW24_kallisto) #combine all OP data.frames
+kallisto_OP_tpm_df <- kallisto_OP_df[, grepl("tpm", names(kallisto_OP_df))] #only extract columns with "tpm" in all OP samples
+kallisto_OP_counts_df <- kallisto_OP_df[, grepl("counts", names(kallisto_OP_df))] #only extract columns with "counts" in all OP samples
+OP_readTPM <- cbind(kallisto_OP_df$EW17_target_id_name, kallisto_OP_tpm_df) #create OP tpm df 
+colnames(OP_readTPM)[colnames(OP_readTPM) == "kallisto_OP_df$EW17_target_id_name"] <- "transcript_id" #change the first column names of OP_TPMCounts into "transcript_id"
+rownames(OP_readTPM) <- OP_readTPM$transcript_id #assign the first column to rownames
+OP_readTPM <- OP_readTPM[,-1] #delete the first column of "transcript_id"
+OP_logReadTPM_old = log2(OP_readTPM) #apply log2 transformation to all OP samples
+OP_logReadTPM = log2(1+OP_readTPM) #apply log2+1 transformation to all OP samples
+````
+
+4. Scattor plot to explore correlation between samples within same species of both SC and OP samples
+````{R}
+#log2(tpm)
+ggplot(data = SC_logReadTPM_old, aes(x = EW9_tpm, y = EW10_tpm)) + geom_point() + ggtitle("Correlation between SC control and heat shock samples") + labs(y="EW10 log2(tpm+1) (heat shock at 42C for 10 mins)", x = "EW9 log2(tpm+1) (control at 30C)") #generate scatter plot for log2(tpm) values in SC samples EW9 and EW10
+
+ggplot(data = OP_logReadTPM_old, aes(x = EW17_tpm, y = EW18_tpm)) + geom_point() + ggtitle("Correlation between OP control and heat shock samples") + labs(y="EW18 log2(tpm+1) (heat shock at 48C for 10 mins)", x = "EW17 log2(tpm+1) (control at 38C)") #generate scatter plot for log2(tpm) values in OP samples EW17 and EW18
+
+ggpairs(data = SC_logReadTPM_old, title = "Correlation between SC samples (log2(tpm+1))", axisLabels = c("show")) + theme(axis.text = element_text(size = 5), strip.text.y = element_text(size = 6), strip.text.x = element_text(size = 6)) #generate scatter plot for log2(tpm) values of all SC samples
+
+ggpairs(data = OP_logReadTPM_old, title = "Correlation between OP samples (log2(tpm+1))") + theme(axis.text = element_text(size = 5), strip.text.y = element_text(size = 6), strip.text.x = element_text(size = 6)) #generate scatter plot for log2(tpm) values of all OP samples
+
+#log2(tpm + 1)
+ggplot(data = SC_logReadTPM, aes(x = EW9_tpm, y = EW10_tpm)) + geom_point() + ggtitle("Correlation between SC control and heat shock samples") + labs(y="EW10 log2(tpm+1) (heat shock at 42C for 10 mins)", x = "EW9 log2(tpm+1) (control at 30C)") #generate scatter plot for log2(tpm+1) values in SC samples EW9 and EW10
+
+ggplot(data = OP_logReadTPM, aes(x = EW17_tpm, y = EW18_tpm)) + geom_point() + ggtitle("Correlation between OP control and heat shock samples") + labs(y="EW18 log2(tpm+1) (heat shock at 48C for 10 mins)", x = "EW17 log2(tpm+1) (control at 38C)") #generate scatter plot for log2(tpm+1) values in OP samples EW17 and EW18
+
+ggpairs(data = SC_logReadTPM, title = "Correlation between SC samples (log2(tpm+1))", axisLabels = c("show")) + theme(axis.text = element_text(size = 5), strip.text.y = element_text(size = 6), strip.text.x = element_text(size = 6)) #generate scatter plot for log2(tpm+1) values of all SC samples
+
+ggpairs(data = OP_logReadTPM, title = "Correlation between OP samples (log2(tpm+1))") + theme(axis.text = element_text(size = 5), strip.text.y = element_text(size = 6), strip.text.x = element_text(size = 6)) #generate scatter plot for log2(tpm+1) values of all OP samples
+
+````
+
+5. Hierarchical clustering visulized by Heatmap to explore correlation between samples within same species
+````{R}
+#untreated tpm
+cormat_SC_tpm_old <- round(cor(SC_readTPM), 2) #create the correlation matrix for log2(tpm) values in SC files
+heatmap.2(cormat_SC_tpm_old, scale = "none", trace = "none", density.info = "none", cexRow = 0.8, cexCol = 0.8, dendrogram = "column", main = "Correlation between SC samples(tpm)", sepcolor = "white", sepwidth=c(0.001,0.001), colsep=1:ncol(cormat_SC_tpm_old), rowsep=1:nrow(cormat_SC_tpm_old)) #generate heatmap for all SC samples by using correlation matrix "cormat_SC_tpm"
+
+cormat_OP_tpm_old <- round(cor(OP_readTPM), 2) #create the correlation matrix for log2(tpm) values in OP files
+heatmap.2(cormat_OP_tpm_old, scale = "none", trace = "none", density.info = "none", cexRow = 0.8, cexCol = 0.8, dendrogram = "column", main = "Correlation between OP samples(tpm)", sepcolor = "white", sepwidth=c(0.001,0.001), colsep=1:ncol(cormat_OP_tpm_old), rowsep=1:nrow(cormat_OP_tpm_old)) #generate heatmap for all OP samples by using correlation matrix "cormat_OP_tpm"
+
+#log2(tpm + 1)
+cormat_SC_tpm <- round(cor(SC_logReadTPM), 2) #create the correlation matrix for tpm values in SC files
+heatmap.2(cormat_SC_tpm, scale = "none", trace = "none", density.info = "none", cexRow = 0.8, cexCol = 0.8, dendrogram = "column", main = "Correlation between SC samples(tpm)", sepcolor = "white", sepwidth=c(0.001,0.001), colsep=1:ncol(cormat_SC_tpm), rowsep=1:nrow(cormat_SC_tpm)) #generate heatmap for all SC samples by using correlation matrix "cormat_SC_tpm"
+
+cormat_OP_tpm <- round(cor(OP_logReadTPM), 2) #create the correlation matrix for tpm values in OP files
+heatmap.2(cormat_OP_tpm, scale = "none", trace = "none", density.info = "none", cexRow = 0.8, cexCol = 0.8, dendrogram = "column", main = "Correlation between OP samples(tpm)", sepcolor = "white", sepwidth=c(0.001,0.001), colsep=1:ncol(cormat_OP_tpm), rowsep=1:nrow(cormat_OP_tpm)) #generate heatmap for all OP samples by using correlation matrix "cormat_OP_tpm"
+
+````
+
+## Run Deseq2 on all SC samples by using tximport
+1. Create the txgene2 table for SC samples, linking transcripts to genes
+````{R}
+SC_feature_table <- read.delim("~/Desktop/2021-RNAproject/results/kallisto_SC/R64_feature_table.txt", header = T) #import summary files containing "transcripts id" and "gene id" information of SC reference 
+SC_select <- SC_feature_table[grep("RNA", SC_feature_table$X..feature), c("X..feature", "product_accession", "symbol")] #only select the column containing "transcript id" and "gene id"
+SC_select_order <- SC_select[order(SC_select$product_accession),] #order the column "product_accession" to make it have the same order with kallisto tsv file
+SC_select_delete_blank <- SC_select_order[!(is.na(SC_select_order$product_accession) | SC_select_order$product_accession == ""), ] #delete blank lines in column "product_accession"
+SC_tx2gene <- SC_select_delete_blank[,c("product_accession", "symbol")] #generate tx2gene table of SC
+colnames(SC_tx2gene) <- c("TXNAME", "GENEID") #change column names of SC_tx2gene to "transcript_id" and "gene_id" 
+````
+
+2. Import kallisto files of SC samples using tximport and construct DEseqDataSet for all SC samples
+````{R}
+SC_kallisto_file_labels <- c("EW9_results", "EW10_results", "EW11_results", "EW12_results", "EW13_results", "EW14_results", "EW15_results", "EW16_results") #Create a vectors storing labels for all SC kallisto results
+SC_files <- file.path("~/Desktop/2021-RNAproject/results/kallisto_SC", SC_kallisto_file_labels, "abundance.h5") #Import all SC kallisto abundance h5 files
+names(SC_files) <- paste0("EW", 9:16) #Give a name (e.g.EW9) to each kallisto abundance h5 file
+SC_txi.kallisto <- tximport(SC_files, type = "kallisto", tx2gene = SC_tx2gene, txOut = F) #tximport all SC allisto abundance h5 files
+
+#SC_txi.sum <- summarizeToGene(SC_txi.kallisto, SC_tx2gene)
+#all.equal(SC_txi.sum$counts, SC_txi.kallisto$counts) #should be TRUE??
+````
+
+3. Create a table that contains the sample IDs and conditions for each SC samples
+````{R}
+SC_notes <- c("SC_BY4741_control_30C.1", "SC_BY4741_heatshock_42C_10min.1", "SC_BY4741_heatshock_46C_10min.1", "SC_BY4741_recovery_42C_10min_30C_20min.1", "SC_BY4741_control_30C.2", "SC_BY4741_heatshock_42C_10min.2", "SC_BY4741_heatshock_46C_10min.2", "SC_BY4741_recovery_42C_10min_30C_20min.2") #create a vector including condition information of all SC samples 
+SC_condition <- c("control", "HS1", "HS2", "recovery", "control", "HS1", "HS2", "recovery") #create a vector including summary of conditions of all SC samples 
+SC_colData <- as.data.frame(cbind(SC_notes, SC_condition)) #create data.frame binding two vectors built above
+rownames(SC_colData) <- colnames(SC_txi.kallisto$counts) #make sure the rownames of SC_colData align with the colnames of SC_txi.kallisto$counts
+````
+
+4. Construct DEseqDataSet for all SC samples and run Deseq2
+````{R}
+SC_dds <- DESeqDataSetFromTximport(SC_txi.kallisto, SC_colData, ~SC_condition) #construct DEseqDataSet for all SC samples
+SC_dds <- DESeq(SC_dds) #run deseq2 on DEseqDataSet of all SC samples
+````
+
+##Analysis of Deseq2 results of SC samples
+1. Heatshock(42C) vs_control(30C) in SC samples
+````{R}
+SC_res_HS1_vs_control <- results(SC_dds, contrast = c("SC_condition","HS1","control")) #extract the base means, log2-fold changes, standard errors, test statistics etc. for every gene between control and heat shock (42C) samples
+plotMA(SC_res_HS1_vs_control) #provide a global view of the relationship between the expression change between diff conditions, genes that pass the significance threshold are colored
+````
+
+2. Heatshock(48C) vs_control(30C) in SC samples
+````{R}
+SC_res_HS2_vs_control <- results(SC_dds, contrast = c("SC_condition","HS2","control"))
+plotMA(SC_res_HS2_vs_control)
+````
+
+3. Recovery vs_control(30C) in SC samples
+````{R}
+SC_res_recovery_vs_control <- results(SC_dds, contrast = c("SC_condition","recovery","control"))
+plotMA(SC_res_recovery_vs_control)
+````
+
+4. Plot individual genes in SC samples
+````{R}
+HSP26 <- plotCounts(SC_dds, gene = "HSP26", intgroup="SC_condition", returnData=TRUE)
+ggplot(HSP26, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(HSP26))) + 
+  theme_bw() +
+  ggtitle("HSP26 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP42 <- plotCounts(SC_dds, gene = "HSP42", intgroup="SC_condition", returnData=TRUE)
+ggplot(HSP42, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(HSP42))) + 
+  theme_bw() +
+  ggtitle("HSP42 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+TPS1 <- plotCounts(SC_dds, gene = "TPS1", intgroup="SC_condition", returnData=TRUE)
+ggplot(TPS1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(TPS1))) + 
+  theme_bw() +
+  ggtitle("TPS1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPS31 <- plotCounts(SC_dds, gene = "RPS31", intgroup="SC_condition", returnData=TRUE)
+ggplot(RPS31, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(RPS31))) + 
+  theme_bw() +
+  ggtitle("RPS31 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+SDA1 <- plotCounts(SC_dds, gene = "SDA1", intgroup="SC_condition", returnData=TRUE)
+ggplot(SDA1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(SDA1))) + 
+  theme_bw() +
+  ggtitle("SDA1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+PGK1 <- plotCounts(SC_dds, gene = "PGK1", intgroup="SC_condition", returnData=TRUE)
+ggplot(PGK1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(PGK1))) + 
+  theme_bw() +
+  ggtitle("PGK1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSF1 <- plotCounts(SC_dds, gene = "HSF1", intgroup="SC_condition", returnData=TRUE)
+ggplot(HSF1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(HSF1))) + 
+  theme_bw() +
+  ggtitle("HSF1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#plotCounts(SC_dds, gene = "SSA3", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "HSP42", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "HSP26", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "PHB2", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "UBC5", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "TPS1", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "PGM2", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "ALD3", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "GFA1", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "HXK1", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "FAA1", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "CYC7", intgroup="SC_condition")
+
+#plotCounts(SC_dds, gene = "RPS31", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "RPL10", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "SNU13", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "SDA1", intgroup="SC_condition")
+
+#plotCounts(SC_dds, gene = "PGK1", intgroup="SC_condition")
+#plotCounts(SC_dds, gene = "HSF1", intgroup="SC_condition")
+
+````
+
+## Run Deseq2 on all SC samples by using tximport
+1. Create the txgene2 table for OP samples, linking transcripts to genes
+````{R}
+OP_feature_table <- read.delim("~/Desktop/2021-RNAproject/results/kallisto_OP/Hansenula2_feature_table.txt", header = T) #import summary files containing "transcripts id" and "gene id" information of OP reference
+OP_select <- OP_feature_table[grep("RNA", OP_feature_table$X..feature), c("X..feature", "product_accession", "locus_tag")] #only select the column containing "transcript id" and "gene id"
+OP_select_order <- OP_select[order(OP_select$product_accession),] #order the column "product_accession" to make it have the same order with kallisto tsv file
+OP_select_delete_blank <- OP_select_order[!(is.na(OP_select_order$product_accession) | OP_select_order$product_accession == ""), ] #delete blank lines in column "product_accession"
+OP_tx2gene <- OP_select_delete_blank[,c("product_accession", "locus_tag")] #generate tx2gene table of OP
+colnames(OP_tx2gene) <- c("TXNAME", "GENEID") #change column names of OP_tx2gene to "transcript_id" and "gene_id" 
+````
+
+2. Import kallisto files of OP samples using tximport and construct DEseqDataSet for all OP samples
+````{R}
+OP_kallisto_file_labels <- c("EW17_results", "EW18_results", "EW19_results", "EW20_results", "EW21_results", "EW22_results", "EW23_results", "EW24_results") #Create a vectors storing labels for all OP kallisto results
+OP_files <- file.path("~/Desktop/2021-RNAproject/results/kallisto_OP", OP_kallisto_file_labels, "abundance.h5") #Import all OP kallisto abundance h5 files
+names(OP_files) <- paste0("EW", 17:24) #Give a name (e.g.EW17) to each OP kallisto abundance h5 file
+OP_txi.kallisto <- tximport(OP_files, type = "kallisto", tx2gene = OP_tx2gene, txOut = F) #tximport all OP allisto abundance h5 files
+
+#OP_txi.sum <- summarizeToGene(OP_txi.kallisto, OP_tx2gene)
+#all.equal(OP_txi.sum$counts, OP_txi.kallisto$counts) #should be TRUE??
+````
+
+3. Create a table that contains the sample IDs and conditions for each OP samples
+````{R}
+OP_notes <- c("OP_DL1_control_38C.1", "OP_DL1_heatshock_48C_10min.1", "OP_DL1_heatshock_52C_10min.1", "OP_DL1_recovery_48C_10min_52C_20min.1", "OP_DL1_control_38C.2", "OP_DL1_heatshock_48C_10min.2", "OP_DL1_heatshock_52C_10min.2", "OP_DL1_recovery_48C_10min_52C_20min.1") #create a vector including condition information of all OP samples 
+OP_condition <- c("control", "HS1", "HS2", "recovery", "control", "HS1", "HS2", "recovery") #create a vector including summary of conditions of all OP samples 
+OP_colData <- as.data.frame(cbind(OP_notes, OP_condition)) #create data.frame binding two vectors built above
+rownames(OP_colData) <- colnames(OP_txi.kallisto$counts) #make sure the rownames of OP_colData align with the colnames of OP_txi.kallisto$counts
+````
+
+4. Construct DEseqDataSet for all OP samples and run Deseq2
+````{R}
+OP_dds <- DESeqDataSetFromTximport(OP_txi.kallisto, OP_colData, ~OP_condition) #construct DEseqDataSet for all OP samples
+OP_dds <- DESeq(OP_dds) #run deseq2 on DEseqDataSet of all OP samples
+````
+
+## Analysis of Deseq2 results of OP sample
+1. Heatshock(48C) vs_control(38C) in OP samples
+````{R}
+OP_res_HS1_vs_control <- results(OP_dds, contrast = c("OP_condition","HS1","control")) #extract the base means, log2-fold changes, standard errors, test statistics etc. for every gene between control and OP heat shock (48C) samples
+plotMA(OP_res_HS1_vs_control) #provide a global view of the relationship between the expression change between diff conditions, genes that pass the significance threshold are colored
+````
+
+2. Heatshock(52C) vs_control(38C) in OP samples
+````{R}
+OP_res_HS2_vs_control <- results(OP_dds, contrast = c("OP_condition","HS2","control"))
+plotMA(OP_res_HS2_vs_control)
+````
+
+3. Recovery vs_control(38C) in OP samples
+````{R}
+OP_res_recovery_vs_control <- results(OP_dds, contrast = c("OP_condition","recovery","control"))
+plotMA(OP_res_recovery_vs_control)
+````
+
+4. Plot individual genes in OP samples
+````{R}
+HSP42_homo <- plotCounts(OP_dds, gene = "HPODL_01889", intgroup="OP_condition", returnData=TRUE)
+ggplot(HSP42_homo, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(HSP42_homo))) + 
+  theme_bw() +
+  ggtitle("HSP42 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP26_homo <- plotCounts(OP_dds, gene = "HPODL_03869", intgroup="OP_condition", returnData=TRUE)
+ggplot(HSP26_homo, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(HSP26_homo))) + 
+  theme_bw() +
+  ggtitle("HSP26 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+TPS1_homo <- plotCounts(OP_dds, gene = "HPODL_03281", intgroup="OP_condition", returnData=TRUE)
+ggplot(TPS1_homo, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(TPS1_homo))) + 
+  theme_bw() +
+  ggtitle("TPS1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPS31_homo <- plotCounts(OP_dds, gene = "HPODL_02367", intgroup="OP_condition", returnData=TRUE)
+ggplot(RPS31_homo, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(RPS31_homo))) + 
+  theme_bw() +
+  ggtitle("RPS31 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+SDA1_homo <- plotCounts(OP_dds, gene = "HPODL_03848", intgroup="OP_condition", returnData=TRUE)
+ggplot(SDA1_homo, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(SDA1_homo))) + 
+  theme_bw() +
+  ggtitle("SDA1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSF1_homo <- plotCounts(OP_dds, gene = "HPODL_00106", intgroup="OP_condition", returnData=TRUE)
+ggplot(HSF1_homo, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(HSF1_homo))) + 
+  theme_bw() +
+  ggtitle("HSF1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+PGK1_homo <- plotCounts(OP_dds, gene = "HPODL_04829", intgroup="OP_condition", returnData=TRUE)
+ggplot(PGK1_homo, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(PGK1_homo))) + 
+  theme_bw() +
+  ggtitle("PGK1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#plotCounts(OP_dds, gene = "HPODL_02202", intgroup="OP_condition") #SSA3 homo
+#plotCounts(OP_dds, gene = "HPODL_01889", intgroup="OP_condition") #HSP42 homo
+#plotCounts(OP_dds, gene = "HPODL_03869", intgroup="OP_condition") #HSP26 homo
+#plotCounts(OP_dds, gene = "HPODL_04801", intgroup="OP_condition") #PHB2 homo
+#plotCounts(OP_dds, gene = "HPODL_04598", intgroup="OP_condition") #UBC5 homo
+#plotCounts(OP_dds, gene = "HPODL_03281", intgroup="OP_condition") #TPS1 homo
+#plotCounts(OP_dds, gene = "HPODL_05015", intgroup="OP_condition") #PGM2 homo
+#plotCounts(OP_dds, gene = "HPODL_02460", intgroup="OP_condition") #ALD3 homo
+#plotCounts(OP_dds, gene = "HPODL_02794", intgroup="OP_condition") #GFA1 homo
+#plotCounts(OP_dds, gene = "HPODL_04936", intgroup="OP_condition") #HXK1 homo
+#plotCounts(OP_dds, gene = "HPODL_02909", intgroup="OP_condition") #FAA1 homo
+#plotCounts(OP_dds, gene = "HPODL_04845", intgroup="OP_condition") #CYC7 homo
+
+#plotCounts(OP_dds, gene = "HPODL_02367", intgroup="OP_condition") #RPS31 homo
+#plotCounts(OP_dds, gene = "HPODL_00277", intgroup="OP_condition") #RPL10 homo
+#plotCounts(OP_dds, gene = "HPODL_02711", intgroup="OP_condition") #SNU13 homo
+#plotCounts(OP_dds, gene = "HPODL_03848", intgroup="OP_condition") #SDA1 homo
+
+#plotCounts(OP_dds, gene = "HPODL_04829", intgroup="OP_condition") #PGK1 homo
+#plotCounts(OP_dds, gene = "HPODL_00106", intgroup="OP_condition") #HSF1 homo
+
+````
+
