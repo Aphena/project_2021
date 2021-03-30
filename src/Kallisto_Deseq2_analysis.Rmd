@@ -1,0 +1,867 @@
+#Analysis of kallisto results and run on Deseq2
+
+```{r setup, include=FALSE}
+library("ggplot2")
+library("GGally")
+library("ggrepel")
+library("reshape2")
+library("gplots")
+library("tximport")
+library("readr")
+library("DESeq2")
+library("dplyr")
+library("readr")
+library("rhdf5")
+library("tidyverse")
+library("cowplot")
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, error = FALSE, warning = FALSE)
+```
+
+##Set labels 
+````{R lables} 
+labels = c() #create empty vectors to which labels will be added
+for (i in 9:24){
+  new_label = paste("EW", i, sep = "") #create strings (e.g. "EW9")
+  labels = c(labels, new_label) #adding strings to vectors
+}
+print(labels)#print labels
+````
+
+##Load all tsv files and reset the names of each file
+````{R}
+kallisto_tsv_list <- list.files(path = "~/Desktop/2021-RNAproject/results/kallisto_tsv") #read files named EW9.abundance.tsv, EW10.abundance.tsv.. in the folder "kallisto_tsv"
+for(i in 1:length(labels)){
+  kallisto_filepath <- file.path("~/Desktop/2021-RNAproject/results/kallisto_tsv/", paste(labels[i], ".abundance.tsv", sep = "")) #create file path of all tsv files
+  oname = paste(labels[i], "_kallisto", sep = "") #create new names of tsv files as EW9_kallisto, EW10_kallisto,....
+  assign(oname, read.csv(kallisto_filepath, sep = "", header = T)) #load all tsv files in the separate dataframe with new names
+}
+````
+
+##Change the names of column and make sure each colname is different from each other
+````{R}
+colnames(EW9_kallisto) <- c("EW9_target_id_name", "EW9_length", "EW9_eff_length", "EW9_counts", "EW9_tpm")
+colnames(EW10_kallisto) <- c("EW10_target_id_name", "EW10_length", "EW10_eff_length", "EW10_counts", "EW10_tpm")
+colnames(EW11_kallisto) <- c("EW11_target_id_name", "EW11_length", "EW11_eff_length", "EW11_counts", "EW11_tpm")
+colnames(EW12_kallisto) <- c("EW12_target_id_name", "EW12_length", "EW12_eff_length", "EW12_counts", "EW12_tpm")
+colnames(EW13_kallisto) <- c("EW13_target_id_name", "EW13_length", "EW13_eff_length", "EW13_counts", "EW13_tpm")
+colnames(EW14_kallisto) <- c("EW14_target_id_name", "EW14_length", "EW14_eff_length", "EW14_counts", "EW14_tpm")
+colnames(EW15_kallisto) <- c("EW15_target_id_name", "EW15_length", "EW15_eff_length", "EW15_counts", "EW15_tpm")
+colnames(EW16_kallisto) <- c("EW16_target_id_name", "EW16_length", "EW16_eff_length", "EW16_counts", "EW16_tpm")
+colnames(EW17_kallisto) <- c("EW17_target_id_name", "EW17_length", "EW17_eff_length", "EW17_counts", "EW17_tpm")
+colnames(EW18_kallisto) <- c("EW18_target_id_name", "EW18_length", "EW18_eff_length", "EW18_counts", "EW18_tpm")
+colnames(EW19_kallisto) <- c("EW19_target_id_name", "EW19_length", "EW19_eff_length", "EW19_counts", "EW19_tpm")
+colnames(EW20_kallisto) <- c("EW20_target_id_name", "EW20_length", "EW20_eff_length", "EW20_counts", "EW20_tpm")
+colnames(EW21_kallisto) <- c("EW21_target_id_name", "EW21_length", "EW21_eff_length", "EW21_counts", "EW21_tpm")
+colnames(EW22_kallisto) <- c("EW22_target_id_name", "EW22_length", "EW22_eff_length", "EW22_counts", "EW22_tpm")
+colnames(EW23_kallisto) <- c("EW23_target_id_name", "EW23_length", "EW23_eff_length", "EW23_counts", "EW23_tpm")
+colnames(EW24_kallisto) <- c("EW24_target_id_name", "EW24_length", "EW24_eff_length", "EW24_counts", "EW24_tpm")
+````
+
+##Create count and tpm data.frames for SC and OP samples respectively
+````{R}
+kallisto_SC_df <- cbind(EW9_kallisto, EW10_kallisto, EW11_kallisto, EW12_kallisto, EW13_kallisto, EW14_kallisto, EW15_kallisto, EW16_kallisto) #combine all SC data.frames
+kallisto_SC_tpm_df <- kallisto_SC_df[, grepl("tpm", names(kallisto_SC_df))] #only extract columns with "tpm" in all SC samples and bind with "transcript_id" column
+kallisto_SC_counts_df <- kallisto_SC_df[, grepl("counts", names(kallisto_SC_df))] #only extract columns with "counts" in all SC samples and bind with "transcript_id" column
+
+SC_readTPM <- cbind(kallisto_SC_df$EW9_target_id_name, kallisto_SC_tpm_df) #create SC tpm df 
+colnames(SC_readTPM)[colnames(SC_readTPM) == "kallisto_SC_df$EW9_target_id_name"] <- "transcript_id" #change the first column names of SC_TPMCounts into "transcript_id"
+rownames(SC_readTPM) <- SC_readTPM$transcript_id #assign the first column to rownames
+SC_readTPM <- SC_readTPM[,-1] #delete the first column of "transcript_id"
+SC_logReadTPM = log2(1+SC_readTPM) #apply log2 transformation to all SC samples
+plot(SC_logReadTPM[,1], SC_logReadTPM[,5]) #Correlation between EW9 and EW13
+
+kallisto_OP_df <- cbind(EW17_kallisto, EW18_kallisto, EW19_kallisto, EW20_kallisto, EW21_kallisto, EW22_kallisto, EW23_kallisto, EW24_kallisto) #combine all OP data.frames
+kallisto_OP_tpm_df <- kallisto_OP_df[, grepl("tpm", names(kallisto_OP_df))] #only extract columns with "tpm" in all OP samples
+kallisto_OP_counts_df <- kallisto_OP_df[, grepl("counts", names(kallisto_OP_df))] #only extract columns with "counts" in all OP samples
+OP_readTPM <- cbind(kallisto_OP_df$EW17_target_id_name, kallisto_OP_tpm_df) #create OP tpm df 
+colnames(OP_readTPM)[colnames(OP_readTPM) == "kallisto_OP_df$EW17_target_id_name"] <- "transcript_id" #change the first column names of OP_TPMCounts into "transcript_id"
+rownames(OP_readTPM) <- OP_readTPM$transcript_id #assign the first column to rownames
+OP_readTPM <- OP_readTPM[,-1] #delete the first column of "transcript_id"
+OP_logReadTPM = log2(1+OP_readTPM) #apply log2 transformation to all OP samples
+plot(OP_logReadTPM[,1], OP_logReadTPM[,5]) #Correlation between EW17 and EW21
+
+````
+
+##Scattor plot to explore correlation between samples within same species of both SC and OP samples
+````{R}
+ggplot(data = SC_logReadTPM, aes(x = EW9_tpm, y = EW10_tpm)) + geom_point() + ggtitle("Correlation between SC control and heat shock samples") + labs(y="EW10 log2(tpm+1) (heat shock at 42C for 10 mins)", x = "EW9 log2(tpm+1) (control at 30C)") #generate scatter plot for tpm values in SC samples EW9 and EW10
+
+ggplot(data = OP_logReadTPM, aes(x = EW17_tpm, y = EW18_tpm)) + geom_point() + ggtitle("Correlation between OP control and heat shock samples") + labs(y="EW18 log2(tpm+1) (heat shock at 48C for 10 mins)", x = "EW17 log2(tpm+1) (control at 38C)") #generate scatter plot for tpm values in OP samples EW17 and EW18
+
+ggpairs(data = SC_logReadTPM, title = "Correlation between SC samples (log2(tpm+1))", axisLabels = c("show")) + theme(axis.text = element_text(size = 5), strip.text.y = element_text(size = 6), strip.text.x = element_text(size = 6)) #generate scatter plot for tpm values in all SC samples
+
+ggpairs(data = OP_logReadTPM, title = "Correlation between OP samples (log2(tpm+1))") + theme(axis.text = element_text(size = 5), strip.text.y = element_text(size = 6), strip.text.x = element_text(size = 6)) #generate scatter plot for tpm values in all OP samples
+
+````
+
+##Heatmap to explore correlation between samples within same species
+````{R}
+cormat_SC_tpm <- round(cor(SC_logReadTPM), 2) #create the correlation matrix for tpm values in SC files
+melted_cormat_SC_tpm <- melt(cormat_SC_tpm) #melt the correlation matrix
+ggplot(data = melted_cormat_SC_tpm, aes(x = Var1, y = Var2, fill = value)) + geom_tile(color = "white") + geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) + scale_fill_gradient2(low = "yellow", high = "red", mid = "orange", midpoint = 0.75, limit = c(0.5,1), space = "Lab") #generate heatmap with ggplot2
+
+cormat_OP_tpm <- round(cor(OP_logReadTPM), 2) #create the correlation matrix for tpm values in OP files
+melted_cormat_OP_tpm <- melt(cormat_OP_tpm) #melt the correlation matrix
+ggplot(data = melted_cormat_OP_tpm, aes(x = Var1, y = Var2, fill = value)) + geom_tile(color = "white") + geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) + scale_fill_gradient2(low = "yellow", high = "red", mid = "orange", midpoint = 0.75, limit = c(0.5,1), space = "Lab") #generate heatmap with ggplot2
+
+````
+
+##Hierarchical clustering visulized by Heatmap to explore correlation between samples within same species
+````{R}
+heatmap.2(cormat_SC_tpm, scale = "none", trace = "none", density.info = "none", cexRow = 0.8, cexCol = 0.8, dendrogram = "column", main = "Correlation between SC samples(log2(tpm+1))", sepcolor = "white", sepwidth=c(0.001,0.001), colsep=1:ncol(cormat_SC_tpm), rowsep=1:nrow(cormat_SC_tpm)) #generate heatmap for all SC samples by using correlation matrix "cormat_SC_tpm"
+
+heatmap.2(cormat_OP_tpm, scale = "none", trace = "none", density.info = "none", cexRow = 0.8, cexCol = 0.8, dendrogram = "column", main = "Correlation between OP samples(log2(tpm+1))", sepcolor = "white", sepwidth=c(0.001,0.001), colsep=1:ncol(cormat_OP_tpm), rowsep=1:nrow(cormat_OP_tpm)) #generate heatmap for all OP samples by using correlation matrix "cormat_OP_tpm"
+
+````
+
+##Deseq2 analysis for SC
+````{R}
+samples <- read.csv(file = "~/Desktop/2021-RNAproject/doc/EWallaceRNASeq5Nov2015SampleSheet.csv", header = T) #import the file contanining the condition of all samples
+samples <- samples[-1,]
+samples <- samples[-1,]
+samples <- samples[-1,] #delete first three rows of samples
+
+SC_OP_reciprocal <- read.table(file = "~/Desktop/2021-RNAproject/doc/scer-opar-reciprocal-best-hits.txt", header = T) #import the file contanining the reciprocal genes of SC in OP 
+
+#Create the txgene2 table for SC samples, linking transcripts to genes
+SC_feature_table <- read.delim("~/Desktop/2021-RNAproject/results/kallisto_SC/R64_feature_table.txt", header = T) #import summary files containing "transcripts id" and "gene id" information of SC reference 
+SC_select <- SC_feature_table[grep("RNA", SC_feature_table$X..feature), c("X..feature", "product_accession", "symbol")] #only select the column containing "transcript id" and "gene id"
+SC_select_order <- SC_select[order(SC_select$product_accession),] #order the column "product_accession" to make it have the same order with kallisto tsv file
+SC_select_delete_blank <- SC_select_order[!(is.na(SC_select_order$product_accession) | SC_select_order$product_accession == ""), ] #delete blank lines in column "product_accession"
+SC_tx2gene <- SC_select_delete_blank[,c("product_accession", "symbol")] #generate tx2gene table of SC
+colnames(SC_tx2gene) <- c("TXNAME", "GENEID") #change column names of SC_tx2gene to "transcript_id" and "gene_id" 
+
+#Import kallisto files of SC samples using tximport and construct DEseqDataSet for all SC samples
+SC_kallisto_file_labels <- c("EW9_results", "EW10_results", "EW11_results", "EW12_results", "EW13_results", "EW14_results", "EW15_results", "EW16_results") #Create a vectors storing labels for all SC kallisto results
+SC_files <- file.path("~/Desktop/2021-RNAproject/results/kallisto_SC", SC_kallisto_file_labels, "abundance.h5") #Import all SC kallisto abundance h5 files
+names(SC_files) <- paste0("EW", 9:16) #Give a name (e.g.EW9) to each kallisto abundance h5 file
+SC_txi.kallisto <- tximport(SC_files, type = "kallisto", tx2gene = SC_tx2gene, txOut = F) #tximport all SC allisto abundance h5 files
+
+#SC_txi.sum <- summarizeToGene(SC_txi.kallisto, SC_tx2gene)
+#all.equal(SC_txi.sum$counts, SC_txi.kallisto$counts) #should be TRUE??
+
+#Create a table that contains the sample IDs and conditions for each SC samples
+SC_notes <- c("SC_BY4741_control_30C.1", "SC_BY4741_heatshock_42C_10min.1", "SC_BY4741_heatshock_46C_10min.1", "SC_BY4741_recovery_42C_10min_30C_20min.1", "SC_BY4741_control_30C.2", "SC_BY4741_heatshock_42C_10min.2", "SC_BY4741_heatshock_46C_10min.2", "SC_BY4741_recovery_42C_10min_30C_20min.2") #create a vector including condition information of all SC samples 
+SC_condition <- c("control_30C", "HS1_42C", "HS2_48C", "recovery_42C30C", "control_30C", "HS1_42C", "HS2_48C", "recovery_42C30C") #create a vector including summary of conditions of all SC samples 
+SC_colData <- as.data.frame(cbind(SC_notes, SC_condition)) #create data.frame binding two vectors built above
+rownames(SC_colData) <- colnames(SC_txi.kallisto$counts) #make sure the rownames of SC_colData align with the colnames of SC_txi.kallisto$counts
+
+#Construct DEseqDataSet for all SC samples and run Deseq2
+SC_dds <- DESeqDataSetFromTximport(SC_txi.kallisto, SC_colData, ~SC_condition) #construct DEseqDataSet for all SC samples
+SC_dds <- DESeq(SC_dds) #run deseq2 on DEseqDataSet of all SC samples
+
+````
+
+#Analysis of Deseq2 results of SC samples
+##Heatshock(42C) vs_control(30C) in SC samples
+````{R}
+#MAplot
+SC_res_HS1_vs_control <- results(SC_dds, contrast = c("SC_condition","HS1_42C","control_30C")) #extract the base means, log2-fold changes, standard errors, test statistics etc. for every gene between control and heat shock (42C) samples
+plotMA(SC_res_HS1_vs_control) #provide a global view of the relationship between the expression change between diff conditions, genes that pass the significance threshold are colored
+
+SC_res_HS1_vs_control <- data.frame(SC_res_HS1_vs_control) 
+
+#volcano plot
+threshold_SC_HS1_vs_control <- SC_res_HS1_vs_control$padj < 0.05 #Obtain logical vector regarding whether padj values are less than 0.05
+length(which(threshold_SC_HS1_vs_control)) #Determine the number of genes with padj<0.05 
+SC_res_HS1_vs_control$threshold <- threshold_SC_HS1_vs_control # Add logical vector as a column (threshold) to the threshold_SC_HS1_vs_control
+SC_res_HS1_vs_control_ordered <- SC_res_HS1_vs_control[order(SC_res_HS1_vs_control$padj), ] #Sort by ordered padj
+SC_res_HS1_vs_control_ordered[1:10, ]
+SC_res_HS1_vs_control_ordered$genelabels <- ""
+SC_res_HS1_vs_control_ordered$genelabels[1:10] <- rownames(SC_res_HS1_vs_control_ordered)[1:10] # Create a column to indicate which genes to label
+
+SC_HS1_vp <- ggplot(SC_res_HS1_vs_control_ordered) +
+  geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = threshold)) + 
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(genelabels == T, rownames(SC_res_HS1_vs_control_ordered),""))) +
+  ggtitle("Heat shock at 42C in SC samples") +
+  xlab("log2 fold change") + 
+  ylab("-log10 adjusted p-value") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = rel(1.5), hjust = 0.5),
+        axis.title = element_text(size = rel(1.25)))
+````
+
+##Heatshock(48C) vs_control(30C) in SC samples
+````{R}
+SC_res_HS2_vs_control <- results(SC_dds, contrast = c("SC_condition","HS2_48C","control_30C"))
+plotMA(SC_res_HS2_vs_control)
+
+SC_res_HS2_vs_control <- data.frame(SC_res_HS2_vs_control) 
+
+#volcano plot
+threshold_SC_HS2_vs_control <- SC_res_HS2_vs_control$padj < 0.05 #Obtain logical vector regarding whether padj values are less than 0.05
+length(which(threshold_SC_HS2_vs_control)) #Determine the number of genes with padj<0.05 
+SC_res_HS2_vs_control$threshold <- threshold_SC_HS2_vs_control # Add logical vector as a column (threshold) to the threshold_SC_HS1_vs_control
+SC_res_HS2_vs_control_ordered <- SC_res_HS2_vs_control[order(SC_res_HS2_vs_control$padj), ]#Sort by ordered padj
+SC_res_HS2_vs_control_ordered[1:9, ]
+SC_res_HS2_vs_control_ordered$genelabels <- ""
+SC_res_HS2_vs_control_ordered$genelabels[1:10] <- rownames(SC_res_HS2_vs_control_ordered)[1:10] # Create a column to indicate which genes to label
+
+SC_HS2_vp <- ggplot(SC_res_HS2_vs_control_ordered) +
+  geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = threshold)) + 
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(genelabels == T, rownames(SC_res_HS2_vs_control_ordered),""))) +
+  ggtitle("Heat shock at 48C in SC samples") +
+  xlab("log2 fold change") + 
+  ylab("-log10 adjusted p-value") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = rel(1.5), hjust = 0.5),
+        axis.title = element_text(size = rel(1.25)))
+````
+
+##Recovery vs_control(30C) in SC samples
+````{R}
+SC_res_recovery_vs_control <- results(SC_dds, contrast = c("SC_condition","recovery_42C30C","control_30C"))
+plotMA(SC_res_recovery_vs_control)
+
+SC_res_recovery_vs_control <- data.frame(SC_res_recovery_vs_control) 
+
+#volcano plot
+threshold_SC_recovery_vs_control <- SC_res_recovery_vs_control$padj < 0.05 #Obtain logical vector regarding whether padj values are less than 0.05
+length(which(threshold_SC_recovery_vs_control)) #Determine the number of genes with padj<0.05 
+SC_res_recovery_vs_control$threshold <- threshold_SC_recovery_vs_control # Add logical vector as a column (threshold) to the threshold_SC_recovery_vs_control
+SC_res_recovery_vs_control_ordered <- SC_res_recovery_vs_control[order(SC_res_recovery_vs_control$padj), ]#Sort by ordered padj
+SC_res_recovery_vs_control_ordered[1:9, ]
+SC_res_recovery_vs_control_ordered$genelabels <- ""
+SC_res_recovery_vs_control_ordered$genelabels[1:10] <- rownames(SC_res_recovery_vs_control_ordered)[1:10] # Create a column to indicate which genes to label
+
+SC_recovery_vp <- ggplot(SC_res_recovery_vs_control_ordered) +
+  geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = threshold)) + 
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(genelabels == T, rownames(SC_res_recovery_vs_control_ordered),""))) +
+  ggtitle("Recovery from 42C in SC samples") +
+  xlab("log2 fold change") + 
+  ylab("-log10 adjusted p-value") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = rel(1.5), hjust = 0.5),
+        axis.title = element_text(size = rel(1.25)))
+````
+
+##Creating function to Plot individual genes in SC
+myplot <- function(gene, title){
+ gene_id <- plotCounts(SC_dds, gene = gene, intgroup="SC_condition", returnData=TRUE)
+ggplot(gene_id, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text(aes(label = rownames(gene))) + 
+  theme_bw() +
+  ggtitle(title) +
+  theme(plot.title = element_text(hjust = 0.5))
+}
+
+myplot(HSP26, HSP26_in_SC)
+
+
+##Plot individual genes in SC
+````{R}
+#chaperon genes
+HSP26 <- plotCounts(SC_dds, gene = "HSP26", intgroup="SC_condition", returnData=TRUE)
+HSP26_p <- ggplot(HSP26, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP26))) + 
+  theme_bw() +
+  ggtitle("HSP26 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP42 <- plotCounts(SC_dds, gene = "HSP42", intgroup="SC_condition", returnData=TRUE)
+HSP42_p <- ggplot(HSP42, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP42))) + 
+  theme_bw() +
+  ggtitle("HSP42 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP104 <- plotCounts(SC_dds, gene = "HSP104", intgroup="SC_condition", returnData=TRUE)
+HSP104_p <- ggplot(HSP104, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP104))) + 
+  theme_bw() +
+  ggtitle("HSP104 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+SSA3 <- plotCounts(SC_dds, gene = "SSA3", intgroup="SC_condition", returnData=TRUE)
+SSA3_p <- ggplot(SSA3, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(SSA3))) + 
+  theme_bw() +
+  ggtitle("SSA3 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP78 <- plotCounts(SC_dds, gene = "HSP78", intgroup="SC_condition", returnData=TRUE)
+HSP78_p <- ggplot(HSP78, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP78))) + 
+  theme_bw() +
+  ggtitle("HSP78 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP60 <- plotCounts(SC_dds, gene = "HSP60", intgroup="SC_condition", returnData=TRUE)
+HSP60_p <- ggplot(HSP60, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP60))) + 
+  theme_bw() +
+  ggtitle("HSP60 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#protein degradation genes
+PHB2 <- plotCounts(SC_dds, gene = "PHB2", intgroup="SC_condition", returnData=TRUE)
+PHB2_p <- ggplot(PHB2, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(PHB2))) + 
+  theme_bw() +
+  ggtitle("PHB2 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+UBC5 <- plotCounts(SC_dds, gene = "UBC5", intgroup="SC_condition", returnData=TRUE)
+UBC5_p <- ggplot(UBC5, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(UBC5))) + 
+  theme_bw() +
+  ggtitle("UBC5 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPN5 <- plotCounts(SC_dds, gene = "RPN5", intgroup="SC_condition", returnData=TRUE)
+RPN5_p <- ggplot(RPN5, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPN5))) + 
+  theme_bw() +
+  ggtitle("RPN5 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+UBC8 <- plotCounts(SC_dds, gene = "UBC8", intgroup="SC_condition", returnData=TRUE)
+UBC8_p <- ggplot(UBC8, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(UBC8))) + 
+  theme_bw() +
+  ggtitle("UBC8 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#trehalose metabolism genes
+TPS1 <- plotCounts(SC_dds, gene = "TPS1", intgroup="SC_condition", returnData=TRUE)
+TPS1_p <- ggplot(TPS1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(TPS1))) + 
+  theme_bw() +
+  ggtitle("TPS1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+TPS2 <- plotCounts(SC_dds, gene = "TPS2", intgroup="SC_condition", returnData=TRUE)
+TPS2_p <- ggplot(TPS2, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(TPS2))) + 
+  theme_bw() +
+  ggtitle("TPS2 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+PGM2 <- plotCounts(SC_dds, gene = "PGM2", intgroup="SC_condition", returnData=TRUE)
+PGM2_p <- ggplot(PGM2, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(PGM2))) + 
+  theme_bw() +
+  ggtitle("PGM2 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+UGP1 <- plotCounts(SC_dds, gene = "UGP1", intgroup="SC_condition", returnData=TRUE)
+UGP1_p <- ggplot(UGP1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(UGP1))) + 
+  theme_bw() +
+  ggtitle("UGP1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+NTH1 <- plotCounts(SC_dds, gene = "NTH1", intgroup="SC_condition", returnData=TRUE)
+NTH1_p <- ggplot(NTH1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(NTH1))) + 
+  theme_bw() +
+  ggtitle("NTH1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+#ribosomal protein encoding or biosynthesis gene
+RPS31 <- plotCounts(SC_dds, gene = "RPS31", intgroup="SC_condition", returnData=TRUE)
+RPS31_p <- ggplot(RPS31, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPS31))) + 
+  theme_bw() +
+  ggtitle("RPS31 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPL10 <- plotCounts(SC_dds, gene = "RPL10", intgroup="SC_condition", returnData=TRUE)
+RPL10_p <- ggplot(RPL10, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPL10))) + 
+  theme_bw() +
+  ggtitle("RPL10 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPS2 <- plotCounts(SC_dds, gene = "RPS2", intgroup="SC_condition", returnData=TRUE)
+RPS2_p <- ggplot(RPS2, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPS2))) + 
+  theme_bw() +
+  ggtitle("RPS2 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+SNU13 <- plotCounts(SC_dds, gene = "SNU13", intgroup="SC_condition", returnData=TRUE)
+SNU13_p <- ggplot(SNU13, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(SNU13))) + 
+  theme_bw() +
+  ggtitle("SNU13 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+SDA1 <- plotCounts(SC_dds, gene = "SDA1", intgroup="SC_condition", returnData=TRUE)
+SDA1_p <- ggplot(SDA1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(SDA1))) + 
+  theme_bw() +
+  ggtitle("SDA1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+URB1 <- plotCounts(SC_dds, gene = "URB1", intgroup="SC_condition", returnData=TRUE)
+URB1_p <- ggplot(URB1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(URB1))) + 
+  theme_bw() +
+  ggtitle("URB1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#unchanged gene
+PGK1 <- plotCounts(SC_dds, gene = "PGK1", intgroup="SC_condition", returnData=TRUE)
+PGK1_p <- ggplot(PGK1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(PGK1))) + 
+  theme_bw() +
+  ggtitle("PGK1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSF1 <- plotCounts(SC_dds, gene = "HSF1", intgroup="SC_condition", returnData=TRUE)
+HSF1_p <- ggplot(HSF1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSF1))) + 
+  theme_bw() +
+  ggtitle("HSF1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+MSN2 <- plotCounts(SC_dds, gene = "MSN2", intgroup="SC_condition", returnData=TRUE)
+MSN2_p <- ggplot(MSN2, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(MSN2))) + 
+  theme_bw() +
+  ggtitle("MSN2 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+MSN4 <- plotCounts(SC_dds, gene = "MSN4", intgroup="SC_condition", returnData=TRUE)
+MSN4_p <- ggplot(MSN4, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(MSN4))) + 
+  theme_bw() +
+  ggtitle("MSN4 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+YAP1 <- plotCounts(SC_dds, gene = "YAP1", intgroup="SC_condition", returnData=TRUE)
+YAP1_p <- ggplot(YAP1, aes(x = SC_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(YAP1))) + 
+  theme_bw() +
+  ggtitle("YAP1 in SC") +
+  theme(plot.title = element_text(hjust = 0.5))
+````
+
+##Deseq2 analysis for OP
+````{R}
+#Create the txgene2 table for OP samples, linking transcripts to genes
+OP_feature_table <- read.delim("~/Desktop/2021-RNAproject/results/kallisto_OP/Hansenula2_feature_table.txt", header = T) #import summary files containing "transcripts id" and "gene id" information of OP reference
+OP_select <- OP_feature_table[grep("RNA", OP_feature_table$X..feature), c("X..feature", "product_accession", "locus_tag")] #only select the column containing "transcript id" and "gene id"
+OP_select_order <- OP_select[order(OP_select$product_accession),] #order the column "product_accession" to make it have the same order with kallisto tsv file
+OP_select_delete_blank <- OP_select_order[!(is.na(OP_select_order$product_accession) | OP_select_order$product_accession == ""), ] #delete blank lines in column "product_accession"
+OP_tx2gene <- OP_select_delete_blank[,c("product_accession", "locus_tag")] #generate tx2gene table of OP
+colnames(OP_tx2gene) <- c("TXNAME", "GENEID") #change column names of OP_tx2gene to "transcript_id" and "gene_id" 
+
+#Import kallisto files of OP samples using tximport and construct DEseqDataSet for all OP samples
+OP_kallisto_file_labels <- c("EW17_results", "EW18_results", "EW19_results", "EW20_results", "EW21_results", "EW22_results", "EW23_results", "EW24_results") #Create a vectors storing labels for all OP kallisto results
+OP_files <- file.path("~/Desktop/2021-RNAproject/results/kallisto_OP", OP_kallisto_file_labels, "abundance.h5") #Import all OP kallisto abundance h5 files
+names(OP_files) <- paste0("EW", 17:24) #Give a name (e.g.EW17) to each OP kallisto abundance h5 file
+OP_txi.kallisto <- tximport(OP_files, type = "kallisto", tx2gene = OP_tx2gene, txOut = F) #tximport all OP allisto abundance h5 files
+
+#OP_txi.sum <- summarizeToGene(OP_txi.kallisto, OP_tx2gene)
+#all.equal(OP_txi.sum$counts, OP_txi.kallisto$counts) #should be TRUE??
+
+#Create a table that contains the sample IDs and conditions for each OP samples
+OP_notes <- c("OP_DL1_control_38C.1", "OP_DL1_heatshock_48C_10min.1", "OP_DL1_heatshock_52C_10min.1", "OP_DL1_recovery_48C_10min_52C_20min.1", "OP_DL1_control_38C.2", "OP_DL1_heatshock_48C_10min.2", "OP_DL1_heatshock_52C_10min.2", "OP_DL1_recovery_48C_10min_52C_20min.1") #create a vector including condition information of all OP samples 
+OP_condition <- c("control_38C", "HS1_48C", "HS2_52C", "recovery_48C38C", "control_38C", "HS1_48C", "HS2_52C", "recovery_48C38C") #create a vector including summary of conditions of all OP samples 
+OP_colData <- as.data.frame(cbind(OP_notes, OP_condition)) #create data.frame binding two vectors built above
+rownames(OP_colData) <- colnames(OP_txi.kallisto$counts) #make sure the rownames of OP_colData align with the colnames of OP_txi.kallisto$counts
+
+
+#Construct DEseqDataSet for all OP samples and run Deseq2
+OP_dds <- DESeqDataSetFromTximport(OP_txi.kallisto, OP_colData, ~OP_condition) #construct DEseqDataSet for all OP samples
+OP_dds <- DESeq(OP_dds) #run deseq2 on DEseqDataSet of all OP samples
+````
+
+#Analysis of Deseq2 results of OP sample
+##Heatshock(48C) vs_control(38C) in OP samples
+````{R}
+OP_res_HS1_vs_control <- results(OP_dds, contrast = c("OP_condition","HS1_48C","control_38C")) #extract the base means, log2-fold changes, standard errors, test statistics etc. for every gene between control and OP heat shock (48C) samples
+plotMA(OP_res_HS1_vs_control) #provide a global view of the relationship between the expression change between diff conditions, genes that pass the significance threshold are colored
+
+OP_res_HS1_vs_control <- data.frame(OP_res_HS1_vs_control) 
+
+#volcano plot
+threshold_OP_HS1_vs_control <- OP_res_HS1_vs_control$padj < 0.05 #Obtain logical vector regarding whether padj values are less than 0.05
+length(which(threshold_OP_HS1_vs_control)) #Determine the number of genes with padj<0.05 
+OP_res_HS1_vs_control$threshold <- threshold_OP_HS1_vs_control # Add logical vector as a column (threshold) to the threshold_SC_HS1_vs_control
+OP_res_HS1_vs_control_ordered <- OP_res_HS1_vs_control[order(OP_res_HS1_vs_control$padj), ] #Sort by ordered padj
+OP_res_HS1_vs_control_ordered$genelabels <- ""
+OP_res_HS1_vs_control_ordered$genelabels[1:10] <- rownames(OP_res_HS1_vs_control_ordered)[1:10] # Create a column to indicate which genes to label
+
+OP_HS1_vp <- ggplot(OP_res_HS1_vs_control_ordered) +
+  geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = threshold)) + 
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(genelabels == T, rownames(OP_res_HS1_vs_control_ordered),""))) +
+  ggtitle("Heat shock at 48C in OP samples") +
+  xlab("log2 fold change") + 
+  ylab("-log10 adjusted p-value") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = rel(1.5), hjust = 0.5),
+        axis.title = element_text(size = rel(1.25)))
+````
+
+##Heatshock(52C) vs_control(38C) in OP samples
+````{R}
+OP_res_HS2_vs_control <- results(OP_dds, contrast = c("OP_condition","HS2_52C","control_38C"))
+plotMA(OP_res_HS2_vs_control)
+
+OP_res_HS2_vs_control <- data.frame(OP_res_HS2_vs_control) 
+
+#volcano plot
+threshold_OP_HS2_vs_control <- OP_res_HS2_vs_control$padj < 0.05 #Obtain logical vector regarding whether padj values are less than 0.05
+length(which(threshold_OP_HS2_vs_control)) #Determine the number of genes with padj<0.05 
+OP_res_HS2_vs_control$threshold <- threshold_OP_HS2_vs_control # Add logical vector as a column (threshold) to the threshold_SC_HS1_vs_control
+OP_res_HS2_vs_control_ordered <- OP_res_HS2_vs_control[order(OP_res_HS2_vs_control$padj), ] #Sort by ordered padj
+OP_res_HS2_vs_control_ordered$genelabels <- ""
+OP_res_HS2_vs_control_ordered$genelabels[1:10] <- rownames(OP_res_HS2_vs_control_ordered)[1:10] # Create a column to indicate which genes to label
+
+OP_HS2_vp <- ggplot(OP_res_HS2_vs_control_ordered) +
+  geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = threshold)) + 
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(genelabels == T, rownames(OP_res_HS2_vs_control_ordered),""))) +
+  ggtitle("Heat shock at 52C in OP samples") +
+  xlab("log2 fold change") + 
+  ylab("-log10 adjusted p-value") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = rel(1.5), hjust = 0.5),
+        axis.title = element_text(size = rel(1.25)))
+````
+
+##Recovery vs_control(38C) in OP samples
+````{R}
+OP_res_recovery_vs_control <- results(OP_dds, contrast = c("OP_condition","recovery_48C38C","control_38C"))
+plotMA(OP_res_recovery_vs_control)
+
+OP_res_recovery_vs_control <- data.frame(OP_res_recovery_vs_control) 
+
+#volcano plot
+threshold_OP_recovery_vs_control <- OP_res_recovery_vs_control$padj < 0.05 #Obtain logical vector regarding whether padj values are less than 0.05
+length(which(threshold_OP_recovery_vs_control)) #Determine the number of genes with padj<0.05 
+OP_res_recovery_vs_control$threshold <- threshold_OP_recovery_vs_control # Add logical vector as a column (threshold) to the threshold_SC_HS1_vs_control
+OP_res_recovery_vs_control_ordered <- OP_res_recovery_vs_control[order(OP_res_recovery_vs_control$padj), ] #Sort by ordered padj
+OP_res_recovery_vs_control_ordered$genelabels <- ""
+OP_res_recovery_vs_control_ordered$genelabels[1:10] <- rownames(OP_res_recovery_vs_control_ordered)[1:10] # Create a column to indicate which genes to label
+
+OP_recovery_vp <- ggplot(OP_res_recovery_vs_control_ordered) +
+  geom_point(aes(x = log2FoldChange, y = -log10(padj), colour = threshold)) + 
+  geom_text_repel(aes(x = log2FoldChange, y = -log10(padj), label = ifelse(genelabels == T, rownames(OP_res_recovery_vs_control_ordered),""))) +
+  ggtitle("Recovey from 48C in OP samples") +
+  xlab("log2 fold change") + 
+  ylab("-log10 adjusted p-value") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = rel(1.5), hjust = 0.5),
+        axis.title = element_text(size = rel(1.25)))
+````
+
+##Plot individual genes in OP samples
+````{R}
+#heatshock chaperon genes
+SSA3_homo <- plotCounts(OP_dds, gene = "HPODL_02450", intgroup="OP_condition", returnData=TRUE)
+SSA3_homo_p <- ggplot(SSA3_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(SSA3_homo))) + 
+  theme_bw() +
+  ggtitle("SSA3 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP42_homo <- plotCounts(OP_dds, gene = "HPODL_01889", intgroup="OP_condition", returnData=TRUE)
+HSP42_homo_p <- ggplot(HSP42_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP42_homo))) + 
+  theme_bw() +
+  ggtitle("HSP42 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP26_homo <- plotCounts(OP_dds, gene = "HPODL_03869", intgroup="OP_condition", returnData=TRUE)
+HSP26_homo_p <- ggplot(HSP26_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP26_homo))) + 
+  theme_bw() +
+  ggtitle("HSP26 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP104_homo <- plotCounts(OP_dds, gene = "HPODL_02027", intgroup="OP_condition", returnData=TRUE)
+HSP104_homo_p <- ggplot(HSP104_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP104_homo))) + 
+  theme_bw() +
+  ggtitle("HSP104 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP78_homo <- plotCounts(OP_dds, gene = "HPODL_03269", intgroup="OP_condition", returnData=TRUE)
+HSP78_homo_p <- ggplot(HSP78_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP78_homo))) + 
+  theme_bw() +
+  ggtitle("HSP78 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+HSP60_homo <- plotCounts(OP_dds, gene = "HPODL_03254", intgroup="OP_condition", returnData=TRUE)
+HSP78_homo_p <- ggplot(HSP60_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSP60_homo))) + 
+  theme_bw() +
+  ggtitle("HSP60 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#protein degradation genes
+PHB2_homo <- plotCounts(OP_dds, gene = "HPODL_04801", intgroup="OP_condition", returnData=TRUE)
+PHB2_homo_p <- ggplot(PHB2_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(PHB2_homo))) + 
+  theme_bw() +
+  ggtitle("PHB2 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+UBC5_homo <- plotCounts(OP_dds, gene = "HPODL_04598", intgroup="OP_condition", returnData=TRUE)
+UBC5_homo_p <- ggplot(UBC5_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(UBC5_homo))) + 
+  theme_bw() +
+  ggtitle("UBC5 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPN5_homo <- plotCounts(OP_dds, gene = "HPODL_03304", intgroup="OP_condition", returnData=TRUE)
+RPN5_homo_p <- ggplot(RPN5_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPN5_homo))) + 
+  theme_bw() +
+  ggtitle("RPN5 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+UBC8_homo <- plotCounts(OP_dds, gene = "HPODL_00565", intgroup="OP_condition", returnData=TRUE)
+UBC8_homo_p <- ggplot(UBC8_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(UBC8_homo))) + 
+  theme_bw() +
+  ggtitle("UBC8 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#Trehalose metabolism genes
+UGP1_homo <- plotCounts(OP_dds, gene = "HPODL_02299", intgroup="OP_condition", returnData=TRUE)
+UGP1_homo_p <- ggplot(UGP1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(UGP1_homo))) + 
+  theme_bw() +
+  ggtitle("UGP1 in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+TPS1_homo <- plotCounts(OP_dds, gene = "HPODL_03281", intgroup="OP_condition", returnData=TRUE)
+TPS1_homo_p <- ggplot(TPS1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(TPS1_homo))) + 
+  theme_bw() +
+  ggtitle("TPS1 gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+TPS2_homo <- plotCounts(OP_dds, gene = "HPODL_01643", intgroup="OP_condition", returnData=TRUE)
+TPS2_homo_p <- ggplot(TPS2_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(TPS2_homo))) + 
+  theme_bw() +
+  ggtitle("TPS2 gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+PGM2_homo <- plotCounts(OP_dds, gene = "HPODL_05015", intgroup="OP_condition", returnData=TRUE)
+PGM2_homo_p <- ggplot(PGM2_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(PGM2_homo))) + 
+  theme_bw() +
+  ggtitle("PGM2 gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+NTH1_homo <- plotCounts(OP_dds, gene = "HPODL_03898", intgroup="OP_condition", returnData=TRUE)
+NTH1_homo_p <- ggplot(NTH1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(NTH1_homo))) + 
+  theme_bw() +
+  ggtitle("NTH1 gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+#ribosomal protein encoding or biogenesis genes
+RPS31_homo <- plotCounts(OP_dds, gene = "HPODL_02367", intgroup="OP_condition", returnData=TRUE)
+RPS31_homo_p <- ggplot(RPS31_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPS31_homo))) + 
+  theme_bw() +
+  ggtitle("RPS31 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPL10_homo <- plotCounts(OP_dds, gene = "HPODL_00277", intgroup="OP_condition", returnData=TRUE)
+RPL10_homo_p <- ggplot(RPL10_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPL10_homo))) + 
+  theme_bw() +
+  ggtitle("RPL10 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+RPS2_homo <- plotCounts(OP_dds, gene = "HPODL_05028", intgroup="OP_condition", returnData=TRUE)
+RPS2_homo_p <- ggplot(RPS2_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(RPS2_homo))) + 
+  theme_bw() +
+  ggtitle("RPS2 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+SNU13_homo <- plotCounts(OP_dds, gene = "HPODL_02711", intgroup="OP_condition", returnData=TRUE)
+SNU13_homo_p <- ggplot(SNU13_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(SNU13_homo))) + 
+  theme_bw() +
+  ggtitle("SNU13 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+SDA1_homo <- plotCounts(OP_dds, gene = "HPODL_03848", intgroup="OP_condition", returnData=TRUE)
+SDA1_homo_p <- ggplot(SDA1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(SDA1_homo))) + 
+  theme_bw() +
+  ggtitle("SDA1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+URB1_homo <- plotCounts(OP_dds, gene = "HPODL_03338", intgroup="OP_condition", returnData=TRUE)
+URB1_homo_p <- ggplot(URB1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(URB1_homo))) + 
+  theme_bw() +
+  ggtitle("URB1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#unchanged gene
+HSF1_homo <- plotCounts(OP_dds, gene = "HPODL_00106", intgroup="OP_condition", returnData=TRUE)
+HSF1_homo_p <- ggplot(HSF1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(HSF1_homo))) + 
+  theme_bw() +
+  ggtitle("HSF1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+PGK1_homo <- plotCounts(OP_dds, gene = "HPODL_04829", intgroup="OP_condition", returnData=TRUE)
+PGK1_homo_p <- ggplot(PGK1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(PGK1_homo))) + 
+  theme_bw() +
+  ggtitle("PGK1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+YAP1_homo <- plotCounts(OP_dds, gene = "HPODL_04368", intgroup="OP_condition", returnData=TRUE)
+YAP1_homo_p <- ggplot(YAP1_homo, aes(x = OP_condition, y = count)) +
+  geom_point(position=position_jitter(w = 0.1,h = 0)) +
+  geom_text_repel(aes(label = rownames(YAP1_homo))) + 
+  theme_bw() +
+  ggtitle("YAP1 homo gene in OP") +
+  theme(plot.title = element_text(hjust = 0.5))
+````
+
+## compare different genes within SC or OP plots
+````{R}
+chaperon_SC <- ggplot(NULL, aes(x = SC_condition, y = count)) + 
+  geom_point(data = HSP42, aes(color = "HSP42"), stat = "identity") + geom_point(data = HSP104, aes(color = "HSP104"), stat = "identity") + geom_point(data = HSP26, aes(color = "HSP26"), stat = "identity") + geom_point(data = HSP78, aes(color = "HSP78"), stat = "identity") + geom_point(data = HSP60, aes(color = "HSP60"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("chaperon gene in SC") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare heatshock chaperon genes within SC samples
+
+degradation_SC <- ggplot(NULL, aes(x = SC_condition, y = count)) + 
+  geom_point(data = PHB2, aes(color = "PHB2"), stat = "identity") + geom_point(data = UBC5, aes(color = "UBC5"), stat = "identity") + geom_point(data = RPN5, aes(color = "RPN5"), stat = "identity") + geom_point(data = UBC8, aes(color = "UBC8"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("degradation protein gene in SC") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare degradation protein encoding genes within SC
+
+metabolism_SC <- ggplot(NULL, aes(x = SC_condition, y = count)) + 
+  geom_point(data = UGP1, aes(color = "UGP1"), stat = "identity") + geom_point(data = TPS1, aes(color = "TPS1"), stat = "identity") + geom_point(data = TPS2, aes(color = "TPS2"), stat = "identity") + geom_point(data = PGM2, aes(color = "PGM2"), stat = "identity") + geom_point(data = NTH1, aes(color = "NTH1"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("trehalose metabolism gene in SC") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare Trehalose metabolism genes within SC 
+
+chaperon_OP <- ggplot(NULL, aes(x = OP_condition, y = count)) + 
+  geom_point(data = HSP42_homo, aes(color = "HSP42_homo"), stat = "identity") + geom_point(data = HSP104_homo, aes(color = "HSP104_homo"), stat = "identity") + geom_point(data = HSP26_homo, aes(color = "HSP26_homo"), stat = "identity") + geom_point(data = HSP78_homo, aes(color = "HSP78_homo"), stat = "identity") + geom_point(data = HSP60_homo, aes(color = "HSP60_homo"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("chaperon gene in OP") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare heatshock chaperon genes within OP samples
+
+degradation_OP <- ggplot(NULL, aes(x = OP_condition, y = count)) + 
+  geom_point(data = PHB2_homo, aes(color = "PHB2_homo"), stat = "identity") + geom_point(data = UBC5_homo, aes(color = "UBC5_homo"), stat = "identity") + geom_point(data = RPN5_homo, aes(color = "RPN5_homo"), stat = "identity") + geom_point(data = UBC8_homo, aes(color = "UBC8_homo"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("degradation protein gene in OP") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare degradation protein encoding genes within OP
+
+metabolism_OP <- ggplot(NULL, aes(x = OP_condition, y = count)) + 
+  geom_point(data = UGP1_homo, aes(color = "UGP1_homo"), stat = "identity") + geom_point(data = TPS1_homo, aes(color = "TPS1_homo"), stat = "identity") + geom_point(data = TPS2_homo, aes(color = "TPS2_homo"), stat = "identity") + geom_point(data = PGM2_homo, aes(color = "PGM2_homo"), stat = "identity") + geom_point(data = NTH1_homo, aes(color = "NTH1_homo"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("trehalose metabolism gene in OP") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare Trehalose metabolism genes within OP 
+
+
+ribosomal_SC <- ggplot(NULL, aes(x = SC_condition, y = count)) + 
+  geom_point(data = RPS31, aes(color = "RPS31" ), stat = "identity") + geom_point(data = RPL10, aes(color = "RPL10"), stat = "identity") + geom_point(data = RPS2, aes(color = "RPS2"), stat = "identity") + geom_point(data = SNU13, aes(color = "SNU13"), stat = "identity") + geom_point(data = SDA1, aes(color = "SDA1"), stat = "identity") + geom_point(data = URB1, aes(color = "URB1"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("ribosomal gene in SC") + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare ribosomal genes within SC samples
+  
+ribosomal_OP <- ggplot(NULL, aes(x = OP_condition, y = count)) + 
+  geom_point(data = RPS31_homo, aes(color = "RPS31_homo" ), stat = "identity") + geom_point(data = RPL10_homo, aes(color = "RPL10_homo"), stat = "identity") + geom_point(data = RPS2_homo, aes(color = "RPS2_homo"), stat = "identity") + geom_point(data = SNU13_homo, aes(color = "SNU13_homo"), stat = "identity") + geom_point(data = SDA1_homo, aes(color = "SDA1_homo"), stat = "identity") + geom_point(data = URB1_homo, aes(color = "URB1_homo"), stat = "identity") +
+  theme_bw() + 
+  ggtitle("ribosomal gene in OP") + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))#compare ribosomal genes within OP samples
+
+unchanged_SC <- ggplot(NULL, aes(x = SC_condition, y = count)) + 
+  geom_point(data = PGK1, aes(color = "PGK1" ), stat = "identity") + geom_point(data = HSF1, aes(color = "HSF1"), stat = "identity") + geom_point(data = MSN2, aes(color = "MSN2"), stat = "identity") + geom_point(data = MSN4, aes(color = "MSN4"), stat = "identity") + geom_point(data = YAP1, aes(color = "YAP1"), stat = "identity") + 
+  theme_bw() + 
+  ggtitle("unchanged gene in SC") + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) #compare unchanged genes within SC samples
+
+unchanged_OP <- ggplot(NULL, aes(x = OP_condition, y = count)) + 
+  geom_point(data = PGK1_homo, aes(color = "PGK1_homo" ), stat = "identity") + geom_point(data = HSF1_homo, aes(color = "HSF1_homo"), stat = "identity") + geom_point(data = YAP1_homo, aes(color = "YAP1_homo"), stat = "identity") + 
+  theme_bw() + 
+  ggtitle("unchanged gene in OP") + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))#compare unchanged genes within OP samples
+
+````
+
+## compare SC and OP plots
+````{R}
+plot_grid(SC_HS1_vp, OP_HS1_vp)
+plot_grid(SC_HS2_vp, OP_HS2_vp)
+plot_grid(SC_recovery_vp, OP_recovery_vp)
+plot_grid(chaperon_SC, chaperon_OP)
+plot_grid(degradation_SC, degradation_OP)
+plot_grid(metabolism_SC, metabolism_OP)
+plot_grid(ribosomal_SC, ribosomal_OP)
+plot_grid(unchanged_SC, unchanged_OP)
+````
+
+
